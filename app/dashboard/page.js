@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Search, Settings2, MoreHorizontal, Book, X, Bookmark, Copy } from "lucide-react";
+import Link from "next/link";
+import { ExternalLink, X, Bookmark, Copy, Folder } from "lucide-react";
 
 function BookmarkInstallModal({
   open,
@@ -99,6 +100,10 @@ export default function DashboardHome() {
     if (typeof window === "undefined") return false;
     return !window.localStorage.getItem("memora_bookmark_installed");
   });
+  const [sources, setSources] = useState([]);
+  const [folders, setFolders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const bookmarkletHref = useMemo(() => {
     if (typeof window === "undefined") return "#";
@@ -120,17 +125,31 @@ export default function DashboardHome() {
     setShowInstallModal(false);
   }
 
-  const notebooks = [
-    { title: "Cook or Be Cooked: Removing the Human Business Bottleneck", sources: 1, type: "Standard" },
-    { title: "Iris Analysis: Unlocking Human Potential", sources: 1, type: "Standard" },
-    { title: "Scaling a $6M AI Children's Book Empire", sources: 1, type: "Standard" },
-    { title: "Scaling Digital Products: From Startup to $141 Million", sources: 1, type: "Standard" },
-    { title: "Starter Story: Profitable Micro-SaaS", sources: 9, type: "Standard" },
-    { title: "The Chatbase Blueprint", sources: 5, type: "Standard" },
-    { title: "The Creator Playbook for Viral App", sources: 2, type: "Research" },
-    { title: "The New App Economy", sources: 2, type: "Standard" },
-    { title: "Untitled", sources: 0, type: "Draft" },
-  ];
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      setError("");
+      try {
+        const [sRes, fRes] = await Promise.all([
+          fetch("/api/sources", { credentials: "include" }),
+          fetch("/api/folders", { credentials: "include" }),
+        ]);
+        const sPayload = await sRes.json();
+        const fPayload = await fRes.json();
+        if (!sRes.ok) throw new Error(sPayload.error || "Failed to load sources");
+        if (!fRes.ok) throw new Error(fPayload.error || "Failed to load folders");
+        setSources(sPayload.data || []);
+        setFolders(fPayload.data || []);
+      } catch (e) {
+        setError(e.message || "Failed to load dashboard data");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const recent = sources.slice(0, 6);
 
   return (
     <div className="max-w-[1240px]">
@@ -144,84 +163,79 @@ export default function DashboardHome() {
       />
 
       <div className="text-[13px] text-gray-500 mb-1 flex items-center gap-2">
-        <span>Views</span>
-        <span className="text-gray-300">/</span>
-        <span className="text-gray-900 font-medium">Notebooks</span>
+        <span>Dashboard</span>
       </div>
-      <h1 className="text-[36px] font-bold text-gray-900 tracking-tight mb-8">All Notebooks</h1>
+      <h1 className="text-[36px] font-bold text-gray-900 tracking-tight mb-8">Overview</h1>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-         <div className="flex items-center gap-2">
-            <button className="bg-gray-900 hover:bg-black text-white px-4 py-2 rounded-lg text-[13px] font-bold shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 flex items-center gap-1.5">
-              <span className="text-lg leading-none">+</span> New Notebook
-            </button>
-            <button className="flex items-center gap-2 px-3 py-2 text-[13px] font-bold text-gray-700 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors">
-              <Book size={14} className="text-gray-500" /> Templates
-            </button>
-         </div>
-         
-         <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="relative">
-              <select className="appearance-none pl-3 pr-8 py-2 text-[13px] font-bold text-gray-700 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-memora-primary min-w-[120px]">
-                 <option>All Types</option>
-                 <option>Standard</option>
-                 <option>Research</option>
-              </select>
-            </div>
-            <div className="relative flex-1 md:w-[240px]">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input type="text" placeholder="Search notebooks..." className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-[13px] font-medium placeholder-gray-400 focus:outline-none focus:border-memora-primary focus:bg-white transition-colors" />
-            </div>
-            <button className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-bold text-gray-700 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors">
-              <Settings2 size={14} className="text-gray-500" /> Filter
-            </button>
-         </div>
+      {error ? <div className="mb-6 text-sm font-semibold text-red-500">{error}</div> : null}
+
+      <div className="grid md:grid-cols-3 gap-4 mb-8">
+        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Sources</div>
+          <div className="mt-2 text-3xl font-extrabold text-gray-900">{loading ? "…" : sources.length}</div>
+          <div className="mt-3">
+            <Link href="/dashboard/sources" className="text-sm font-semibold text-memora-primary hover:underline">
+              View sources →
+            </Link>
+          </div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Folders</div>
+          <div className="mt-2 text-3xl font-extrabold text-gray-900">{loading ? "…" : folders.length}</div>
+          <div className="mt-3 text-sm font-semibold text-gray-600 flex items-center gap-2">
+            <Folder size={16} className="text-gray-400" />
+            Organize your sources
+          </div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Quick actions</div>
+          <div className="mt-3 flex flex-col gap-2">
+            <Link
+              href="/dashboard/sources"
+              className="inline-flex items-center justify-between px-4 py-2.5 rounded-lg bg-memora-dark text-white text-sm font-bold hover:bg-memora-primary transition-colors"
+            >
+              Go to Sources <ExternalLink size={16} />
+            </Link>
+            <Link
+              href="/dashboard/import"
+              className="inline-flex items-center justify-between px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-bold text-gray-800 hover:bg-gray-50"
+            >
+              Bulk Import <ExternalLink size={16} />
+            </Link>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-         <table className="w-full text-left text-[13px]">
-            <thead className="bg-gray-50/50 text-gray-500 font-semibold border-b border-gray-200">
-               <tr>
-                  <th className="px-4 py-3 w-10 text-center"><input type="checkbox" className="rounded border-gray-300 text-memora-primary focus:ring-memora-primary" /></th>
-                  <th className="px-4 py-3">Notebook Name</th>
-                  <th className="px-4 py-3">Type</th>
-                  <th className="px-4 py-3 text-right">Sources</th>
-                  <th className="px-4 py-3 w-12 text-center"></th>
-               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-               {notebooks.map((nb, i) => (
-                 <tr key={i} className="hover:bg-gray-50/50 transition-colors group cursor-pointer">
-                   <td className="px-4 py-4 text-center">
-                     <input type="checkbox" className="rounded border-gray-300 text-memora-primary focus:ring-memora-primary" />
-                   </td>
-                   <td className="px-4 py-4 font-bold text-gray-900">{nb.title}</td>
-                   <td className="px-4 py-4">
-                     <span className="inline-flex items-center text-[11px] font-bold px-2 py-0.5 border border-gray-200 text-gray-600 bg-white rounded-md">
-                       {nb.type}
-                     </span>
-                   </td>
-                   <td className="px-4 py-4 text-gray-500 font-medium text-right">{nb.sources} source{nb.sources !== 1 ? 's' : ''}</td>
-                   <td className="px-4 py-4 text-center text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                     <button className="p-1 hover:bg-gray-100 rounded text-gray-500"><MoreHorizontal size={16} /></button>
-                   </td>
-                 </tr>
-               ))}
-            </tbody>
-         </table>
-         <div className="px-4 py-3 border-t border-gray-200 bg-gray-50/50 text-xs text-gray-500 font-medium flex justify-between items-center">
-           <span>0 of {notebooks.length} row(s) selected.</span>
-           <div className="flex items-center gap-4">
-              <span>Rows per page 10 ▾</span>
-              <span>Page 1 of 1</span>
-              <div className="flex gap-1">
-                <button className="p-1 hover:bg-gray-200 rounded text-gray-400 cursor-not-allowed">{'<<'}</button>
-                <button className="p-1 hover:bg-gray-200 rounded text-gray-400 cursor-not-allowed">{'<'}</button>
-                <button className="p-1 hover:bg-gray-200 rounded text-gray-400 cursor-not-allowed">{'>'}</button>
-                <button className="p-1 hover:bg-gray-200 rounded text-gray-400 cursor-not-allowed">{'>>'}</button>
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <div>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Recent sources</div>
+            <div className="text-sm font-semibold text-gray-700 mt-1">Your latest saved items</div>
+          </div>
+          <Link href="/dashboard/sources" className="text-sm font-bold text-gray-700 hover:text-gray-900">
+            View all
+          </Link>
+        </div>
+
+        {loading ? (
+          <div className="p-6 text-sm font-medium text-gray-500">Loading…</div>
+        ) : recent.length === 0 ? (
+          <div className="p-6 text-sm font-medium text-gray-500">No sources yet. Use the bookmark to save from any site.</div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {recent.map((s) => (
+              <div key={s.id} className="px-6 py-4 flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <Link href={`/dashboard/sources/${s.id}`} className="block font-bold text-gray-900 truncate hover:text-memora-primary">
+                    {s.title}
+                  </Link>
+                  <div className="text-xs text-gray-500 mt-1 truncate">{s.source_url}</div>
+                </div>
+                <div className="text-xs font-bold text-gray-400 uppercase shrink-0">{s.platform}</div>
               </div>
-           </div>
-         </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -33,14 +33,24 @@ async function getAuthUser() {
   return { supabase, user };
 }
 
-export async function GET() {
+export async function GET(request) {
   const { supabase, user } = await getAuthUser();
   if (!user) return jsonError("Unauthorized", 401);
 
-  const { data, error } = await supabase
+  const folderId = new URL(request.url).searchParams.get("folder_id");
+  const sourceType = new URL(request.url).searchParams.get("source_type");
+  const isFavorite = new URL(request.url).searchParams.get("is_favorite");
+
+  let query = supabase
     .from("sources")
     .select("*")
     .order("created_at", { ascending: false });
+  if (folderId) query = query.eq("folder_id", folderId);
+  if (sourceType) query = query.eq("source_type", sourceType);
+  if (isFavorite === "true") query = query.eq("is_favorite", true);
+  if (isFavorite === "false") query = query.eq("is_favorite", false);
+
+  const { data, error } = await query;
 
   if (error) return jsonError(error.message, 500);
   return NextResponse.json({ data: data ?? [] });
@@ -72,6 +82,7 @@ export async function POST(request) {
       source_url: sourceUrl,
       source_type: sourceType,
       platform: item.platform || detectPlatform(sourceUrl),
+      folder_id: item.folder_id || null,
       selected_text: content.slice(0, 20000),
       content: String(item.content || "").slice(0, 50000),
       metadata: item.metadata ?? {},

@@ -49,6 +49,9 @@ export async function PATCH(request, { params }) {
   if (typeof body.content === "string") {
     updates.content = body.content.slice(0, 50000);
   }
+  if (typeof body.is_favorite === "boolean") {
+    updates.is_favorite = body.is_favorite;
+  }
 
   if (Object.keys(updates).length === 0) return jsonError("No valid update fields");
 

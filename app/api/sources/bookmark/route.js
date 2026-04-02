@@ -38,6 +38,7 @@ export async function POST(request) {
     user_id: user.id,
     title: String(body.title || "Untitled bookmark").trim(),
     source_url: sourceUrl,
+    folder_id: body.folder_id || null,
     source_type: "bookmark",
     platform: detectPlatform(sourceUrl),
     selected_text: String(body.selected_text || "").slice(0, 20000),

@@ -1,8 +1,45 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Star } from "lucide-react";
 
 export default function FavoritesPage() {
+  const [items, setItems] = useState([]);
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await fetch("/api/sources?is_favorite=true", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const payload = await res.json();
+        if (!res.ok) throw new Error(payload.error || "Failed to load favorites");
+        // Safety guard: Favorites page should only render starred sources.
+        setItems((payload.data || []).filter((x) => x.is_favorite === true));
+      } catch (e) {
+        setError(e.message || "Unable to fetch favorites");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((x) =>
+      [x.title, x.source_url, x.platform].filter(Boolean).some((v) => String(v).toLowerCase().includes(q))
+    );
+  }, [items, query]);
+
   return (
     <div className="max-w-[1000px]">
       <div className="text-[13px] text-gray-500 mb-1 flex items-center gap-2">
@@ -12,14 +49,70 @@ export default function FavoritesPage() {
       </div>
       <h1 className="text-[32px] font-bold text-gray-900 tracking-tight mb-8">Favorites</h1>
       
-      <div className="bg-white border border-gray-200 rounded-xl p-12 flex flex-col items-center justify-center text-center min-h-[400px] shadow-sm">
-        <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 mb-4 border border-gray-100">
-          <Star size={28} />
-        </div>
-        <h3 className="text-lg font-bold text-gray-900 mb-2">No favorites found</h3>
-        <p className="text-gray-500 text-sm max-w-[300px]">
-          This feature module is clean and ready. Organize your content to streamline your workflows.
-        </p>
+      <div className="mb-4">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search favorites..."
+          className="w-full md:w-[320px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-memora-primary shadow-sm transition-colors"
+        />
+      </div>
+
+      {error ? <div className="mb-4 text-sm font-semibold text-red-500">{error}</div> : null}
+
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="p-10 text-center text-sm text-gray-500">Loading favorites...</div>
+        ) : filtered.length === 0 ? (
+          <div className="p-12 flex flex-col items-center justify-center text-center min-h-[300px]">
+            <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 mb-4 border border-gray-100">
+              <Star size={28} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">No favorites found</h3>
+            <p className="text-gray-500 text-sm max-w-[300px]">
+              Star items from Sources to see them here.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {filtered.map((item) => (
+              <div key={item.id} className="p-5 flex items-start gap-4 hover:bg-gray-50/50 transition-colors">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const revertItems = [...items];
+                    setItems((prev) => prev.filter((x) => x.id !== item.id));
+                    try {
+                      const res = await fetch(`/api/sources/${item.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({ is_favorite: false }),
+                      });
+                      if (!res.ok) throw new Error();
+                    } catch (e) {
+                      setItems(revertItems);
+                      setError("Failed to un-favorite item");
+                    }
+                  }}
+                  className="shrink-0 pt-0.5 rounded-lg hover:bg-red-50 text-yellow-500 fill-yellow-500 hover:text-gray-300 hover:fill-transparent transition-all cursor-pointer group"
+                  title="Remove from favorites"
+                >
+                  <Star size={20} className="fill-yellow-500 group-hover:fill-transparent transition-colors" />
+                </button>
+                <div className="flex-1 min-w-0">
+                  <Link href={`/dashboard/sources/${item.id}`} className="block font-semibold text-gray-900 hover:text-memora-primary mb-1 truncate">
+                    {item.title}
+                  </Link>
+                  <a href={item.source_url} target="_blank" rel="noreferrer" className="block text-xs text-memora-primary truncate hover:underline max-w-fit">
+                    {item.source_url}
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

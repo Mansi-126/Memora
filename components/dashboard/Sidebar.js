@@ -10,6 +10,13 @@ export default function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [counts, setCounts] = useState({
+    notebooks: 0,
+    sources: 0,
+    artifacts: 0,
+    collections: 0,
+    favorites: 0,
+  });
 
   useEffect(() => {
     const supabase = createClient();
@@ -24,6 +31,46 @@ export default function Sidebar({ isOpen, onClose }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCounts() {
+      try {
+        const [sourcesRes, artifactsRes, favoritesRes, foldersRes] = await Promise.all([
+          fetch("/api/sources", { credentials: "include" }),
+          fetch("/api/sources?source_type=artifact", { credentials: "include" }),
+          fetch("/api/sources?is_favorite=true", { credentials: "include" }),
+          fetch("/api/folders", { credentials: "include" }),
+        ]);
+
+        const [sourcesPayload, artifactsPayload, favoritesPayload, foldersPayload] = await Promise.all([
+          sourcesRes.json().catch(() => ({ data: [] })),
+          artifactsRes.json().catch(() => ({ data: [] })),
+          favoritesRes.json().catch(() => ({ data: [] })),
+          foldersRes.json().catch(() => ({ data: [] })),
+        ]);
+
+        if (cancelled) return;
+
+        const foldersCount = Array.isArray(foldersPayload.data) ? foldersPayload.data.length : 0;
+        setCounts({
+          notebooks: foldersCount,
+          sources: Array.isArray(sourcesPayload.data) ? sourcesPayload.data.length : 0,
+          artifacts: Array.isArray(artifactsPayload.data) ? artifactsPayload.data.length : 0,
+          collections: foldersCount,
+          favorites: Array.isArray(favoritesPayload.data) ? favoritesPayload.data.length : 0,
+        });
+      } catch {
+        if (cancelled) return;
+      }
+    }
+
+    loadCounts();
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   const displayName = useMemo(() => {
     return (
@@ -48,15 +95,15 @@ export default function Sidebar({ isOpen, onClose }) {
   }
 
   const viewItems = [
-    { name: "Notebooks", href: "/dashboard", icon: Book, badge: 11 },
-    { name: "Sources", href: "/dashboard/sources", icon: FileText, badge: 0 },
-    { name: "Artifacts", href: "/dashboard/artifacts", icon: Layers, badge: 16 },
+    { name: "Notebooks", href: "/dashboard", icon: Book, badge: counts.notebooks },
+    { name: "Sources", href: "/dashboard/sources", icon: FileText, badge: counts.sources },
+    { name: "Artifacts", href: "/dashboard/artifacts", icon: Layers, badge: counts.artifacts },
     { name: "Manage Space", href: "/dashboard/manage", icon: Settings },
   ];
 
   const organizeItems = [
-    { name: "Collections", href: "/dashboard/collections", icon: Folder, badge: 0 },
-    { name: "Favorites", href: "/dashboard/favorites", icon: Star, badge: 0 },
+    { name: "Collections", href: "/dashboard/collections", icon: Folder, badge: counts.collections },
+    { name: "Favorites", href: "/dashboard/favorites", icon: Star, badge: counts.favorites },
     { name: "Podcasts", href: "/dashboard/podcasts", icon: Mic },
   ];
 
