@@ -1,8 +1,45 @@
 "use client";
 
+import { useState } from "react";
 import { DownloadCloud, CloudLightning, FileText, Download } from "lucide-react";
 
 export default function BulkImportPage() {
+  const [input, setInput] = useState("");
+  const [status, setStatus] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleImport() {
+    const urls = input
+      .split("\n")
+      .map((x) => x.trim())
+      .filter(Boolean);
+
+    if (urls.length === 0) {
+      setStatus("Add at least one URL.");
+      return;
+    }
+
+    setSubmitting(true);
+    setStatus("");
+    try {
+      const items = urls.map((url) => ({ source_url: url, title: url, source_type: "manual" }));
+      const res = await fetch("/api/sources", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ items }),
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.error || "Import failed");
+      setStatus(`Imported ${payload.data?.length ?? 0} sources.`);
+      setInput("");
+    } catch (e) {
+      setStatus(e.message || "Import failed");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <div className="max-w-[800px]">
       <div className="text-[13px] text-gray-500 mb-1 flex items-center gap-2">
@@ -58,17 +95,28 @@ export default function BulkImportPage() {
                 Paste one URL per line. We&apos;ll automatically validate and import all valid HTTP/HTTPS links from your list.
               </div>
               <textarea 
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
                 className="w-full h-[240px] border border-gray-200 rounded-xl p-4 font-mono text-[13px] text-gray-500 bg-gray-50 focus:bg-white focus:outline-none focus:border-memora-primary focus:ring-2 focus:ring-memora-primary/20 transition-colors shadow-inner resize-none"
                 placeholder="https://example.com/article1&#10;https://example.com/article2&#10;https://example.com/article3"
               />
            </div>
 
+           {status ? (
+             <div className="mt-3 text-sm font-medium text-gray-600">{status}</div>
+           ) : null}
+
            <div className="mt-6 flex justify-end gap-3">
               <button className="px-6 py-2.5 rounded-lg font-bold text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors">
                 Cancel
               </button>
-              <button className="px-6 py-2.5 rounded-lg font-bold text-sm text-white bg-memora-dark hover:bg-memora-primary shadow-sm transition-colors">
-                Import Sources
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={handleImport}
+                className="px-6 py-2.5 rounded-lg font-bold text-sm text-white bg-memora-dark hover:bg-memora-primary shadow-sm transition-colors disabled:opacity-60"
+              >
+                {submitting ? "Importing..." : "Import Sources"}
               </button>
            </div>
         </div>
