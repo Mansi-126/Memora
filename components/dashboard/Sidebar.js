@@ -98,6 +98,9 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: "Notebooks", href: "/dashboard", icon: Book, badge: counts.notebooks },
     { name: "Sources", href: "/dashboard/sources", icon: FileText, badge: counts.sources },
     { name: "Artifacts", href: "/dashboard/artifacts", icon: Layers, badge: counts.artifacts },
+  ];
+
+  const manageItems = [
     { name: "Manage Space", href: "/dashboard/manage", icon: Settings },
   ];
 
@@ -160,6 +163,7 @@ export default function Sidebar({ isOpen, onClose }) {
         {renderNavGroup("Views", viewItems)}
         {renderNavGroup("Organize", organizeItems)}
         {renderNavGroup("Tools", toolItems)}
+        {renderNavGroup(null, manageItems)}
       </div>
 
       {/* BOTTOM ACCOUNT SECTION */}

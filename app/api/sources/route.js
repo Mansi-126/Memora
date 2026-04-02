@@ -6,7 +6,15 @@ function jsonError(message, status = 400) {
 }
 
 function normalizeSourceType(value) {
-  const allowed = new Set(["bookmark", "chat", "social", "video", "web", "manual"]);
+  const allowed = new Set([
+    "bookmark",
+    "chat",
+    "social",
+    "video",
+    "web",
+    "manual",
+    "artifact",
+  ]);
   return allowed.has(value) ? value : "web";
 }
 
