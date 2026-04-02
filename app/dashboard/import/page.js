@@ -55,7 +55,7 @@ export default function BulkImportPage() {
            
            <div className="mt-6">
               <div className="bg-memora-light border-l-[3px] border-memora-primary p-4 rounded-r-xl mb-4 text-[14px] font-medium text-gray-700">
-                Paste one URL per line. We'll automatically validate and import all valid HTTP/HTTPS links from your list.
+                Paste one URL per line. We&apos;ll automatically validate and import all valid HTTP/HTTPS links from your list.
               </div>
               <textarea 
                 className="w-full h-[240px] border border-gray-200 rounded-xl p-4 font-mono text-[13px] text-gray-500 bg-gray-50 focus:bg-white focus:outline-none focus:border-memora-primary focus:ring-2 focus:ring-memora-primary/20 transition-colors shadow-inner resize-none"

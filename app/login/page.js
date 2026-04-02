@@ -1,10 +1,23 @@
 "use client";
 
 import { Leaf } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Login() {
-  const router = useRouter();
+  async function signInWithGoogle() {
+    const supabase = createClient();
+    const origin = window.location.origin;
+    const next = new URLSearchParams(window.location.search).get("next");
+    const callback = next
+      ? `${origin}/auth/callback?next=${encodeURIComponent(next)}`
+      : `${origin}/auth/callback`;
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: callback,
+      },
+    });
+  }
 
   return (
     <div className="min-h-screen bg-memora-bg flex flex-col justify-center items-center px-4 font-sans text-memora-text">
@@ -15,8 +28,9 @@ export default function Login() {
           <h1 className="font-heading font-extrabold text-3xl mb-2 text-memora-dark">Welcome to Memora</h1>
           <p className="text-memora-muted mb-8 font-medium">Log in or create an account to continue</p>
 
-          <button 
-             onClick={() => router.push('/dashboard')}
+          <button
+             type="button"
+             onClick={() => signInWithGoogle()}
              className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-3 transition-colors shadow-sm cursor-pointer mb-4"
           >
              <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
@@ -26,13 +40,6 @@ export default function Login() {
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
              </svg>
              Continue with Google
-          </button>
-          
-          <button 
-             onClick={() => router.push('/dashboard')}
-             className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-3 transition-colors shadow-sm cursor-pointer"
-          >
-             Continue with Email
           </button>
 
           <p className="text-xs text-memora-muted mt-8">By continuing, you acknowledge that you understand and agree to Memora&apos;s Terms and Privacy Policy.</p>

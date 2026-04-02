@@ -1,11 +1,51 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Book, FileText, Layers, Settings, Folder, Star, Mic, GitMerge, Columns, Zap, MessageSquare, Download, File, Edit3, Grid, RotateCcw, LogOut } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Book, FileText, Layers, Settings, Folder, Star, Mic, GitMerge, Columns, Zap, MessageSquare, Download, File, Edit3, Grid, LogOut } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(({ data: { user: u } }) => setUser(u ?? null));
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const displayName = useMemo(() => {
+    return (
+      user?.user_metadata?.full_name ||
+      user?.user_metadata?.name ||
+      user?.user_metadata?.first_name ||
+      user?.email ||
+      "Account"
+    );
+  }, [user]);
+
+  const avatarInitial = useMemo(() => {
+    const s = String(displayName ?? "").trim();
+    return s ? s[0].toUpperCase() : "M";
+  }, [displayName]);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
 
   const viewItems = [
     { name: "Notebooks", href: "/dashboard", icon: Book, badge: 11 },
@@ -79,15 +119,32 @@ export default function Sidebar({ isOpen, onClose }) {
       <div className="p-4 shrink-0 mx-2 mb-2">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#34682c] rounded-full flex items-center justify-center text-white font-medium text-[20px]">
-              M
+            <div className="w-10 h-10 bg-[#34682c] rounded-full flex items-center justify-center text-white font-medium text-[20px] overflow-hidden">
+              {user?.user_metadata?.avatar_url || user?.user_metadata?.picture ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={user.user_metadata.avatar_url ?? user.user_metadata.picture}
+                  alt={displayName}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                avatarInitial
+              )}
             </div>
             <div className="flex flex-col">
-              <span className="text-[16px] font-bold text-gray-900 leading-tight">Ms. Patel</span>
-              <span className="text-[13px] font-medium text-gray-400 leading-tight mt-0.5">cartoonaiera@gmail.com</span>
+              <span className="text-[16px] font-bold text-gray-900 leading-tight">{displayName}</span>
+              <span className="text-[13px] font-medium text-gray-400 leading-tight mt-0.5">
+                {user?.email || ""}
+              </span>
             </div>
           </div>
-          <button className="text-gray-400 hover:text-gray-700 transition-colors">
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="text-gray-400 hover:text-gray-700 transition-colors"
+            title="Sign out"
+          >
             <LogOut size={20} strokeWidth={2} />
           </button>
         </div>

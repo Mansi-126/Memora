@@ -20,7 +20,12 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${plusJakartaSans.variable} ${dmSans.variable} scroll-smooth antialiased`} suppressHydrationWarning>
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      className={`${plusJakartaSans.variable} ${dmSans.variable} scroll-smooth antialiased`}
+      suppressHydrationWarning
+    >
       <body className="font-sans bg-memora-bg text-memora-text min-h-screen flex flex-col" suppressHydrationWarning>
         {children}
       </body>

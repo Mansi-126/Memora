@@ -107,7 +107,7 @@ export default function SourcesPage() {
           </div>
           <h3 className="text-[20px] font-bold text-gray-900 mb-2">No Sources Yet</h3>
           <p className="text-gray-500 font-medium text-[14px]">
-            You haven't imported any documents, links, or media yet.
+            You haven&apos;t imported any documents, links, or media yet.
           </p>
         </div>
       </div>

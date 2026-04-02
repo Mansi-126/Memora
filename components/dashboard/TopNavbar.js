@@ -1,7 +1,7 @@
 "use client";
 
-import { Search, Bell, Menu, Plus } from "lucide-react";
-import Image from "next/image"; // we can use standard img or simple div for avatar
+import { Search, Menu } from "lucide-react";
+import Image from "next/image";
 
 export default function TopNavbar({ onMenuClick }) {
   return (
