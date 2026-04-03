@@ -7,6 +7,7 @@ import {
   parseUrlsFromBulkText,
   countNonEmptyLines,
 } from "@/lib/bulk-import-urls";
+import { refreshDashboardSidebar } from "@/lib/dashboard-events";
 
 const IMPORT_TABS = [
   { id: "links", label: "Links" },
@@ -104,6 +105,7 @@ export default function BulkImportPage() {
       setShowNewFolder(false);
       setStatus("Notebook created.");
       setStatusTone("ok");
+      refreshDashboardSidebar();
     } catch (e) {
       setStatus(e.message || "Failed to create folder");
       setStatusTone("err");
@@ -149,7 +151,10 @@ export default function BulkImportPage() {
         setStatusTone("ok");
       }
 
-      if (payload.imported > 0) setInput("");
+      if (payload.imported > 0) {
+        setInput("");
+        refreshDashboardSidebar();
+      }
     } catch (e) {
       setStatus(e.message || "Import failed");
       setStatusTone("err");

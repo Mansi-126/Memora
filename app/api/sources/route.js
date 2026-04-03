@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isValidUuid } from "@/lib/validation";
 
 function jsonError(message, status = 400) {
   return NextResponse.json({ error: message }, { status });
@@ -48,6 +49,10 @@ export async function GET(request) {
   const folderId = new URL(request.url).searchParams.get("folder_id");
   const sourceType = new URL(request.url).searchParams.get("source_type");
   const isFavorite = new URL(request.url).searchParams.get("is_favorite");
+
+  if (folderId && !isValidUuid(folderId)) {
+    return jsonError("Invalid folder_id", 400);
+  }
 
   let query = supabase
     .from("sources")

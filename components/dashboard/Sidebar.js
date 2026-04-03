@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Book, FileText, Layers, Settings, Folder, Star, GitMerge, Columns, MessageSquare, Download, Grid, LogOut, Leaf } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { MEMORA_DASHBOARD_REFRESH } from "@/lib/dashboard-events";
 
 export default function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
@@ -32,16 +33,25 @@ export default function Sidebar({ isOpen, onClose }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const lastCountsSuccessRef = useRef(0);
+
   useEffect(() => {
+    if (!user?.id) return;
+
     let cancelled = false;
 
-    async function loadCounts() {
+    async function loadCounts(force) {
+      const now = Date.now();
+      if (!force && document.visibilityState === "visible" && now - lastCountsSuccessRef.current < 45_000) {
+        return;
+      }
+
       try {
         const [sourcesRes, artifactsRes, favoritesRes, foldersRes] = await Promise.all([
-          fetch("/api/sources", { credentials: "include" }),
-          fetch("/api/sources?source_type=artifact", { credentials: "include" }),
-          fetch("/api/sources?is_favorite=true", { credentials: "include" }),
-          fetch("/api/folders", { credentials: "include" }),
+          fetch("/api/sources", { credentials: "include", cache: "no-store" }),
+          fetch("/api/sources?source_type=artifact", { credentials: "include", cache: "no-store" }),
+          fetch("/api/sources?is_favorite=true", { credentials: "include", cache: "no-store" }),
+          fetch("/api/folders", { credentials: "include", cache: "no-store" }),
         ]);
 
         const [sourcesPayload, artifactsPayload, favoritesPayload, foldersPayload] = await Promise.all([
@@ -65,16 +75,31 @@ export default function Sidebar({ isOpen, onClose }) {
           collections: foldersCount,
           favorites: favoriteSourcesCount + favoriteFoldersCount,
         });
+        lastCountsSuccessRef.current = Date.now();
       } catch {
         if (cancelled) return;
       }
     }
 
-    loadCounts();
+    loadCounts(true);
+
+    function onVisible() {
+      if (document.visibilityState === "visible") loadCounts(false);
+    }
+
+    function onDashboardRefresh() {
+      loadCounts(true);
+    }
+
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener(MEMORA_DASHBOARD_REFRESH, onDashboardRefresh);
+
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener(MEMORA_DASHBOARD_REFRESH, onDashboardRefresh);
     };
-  }, [pathname]);
+  }, [user?.id]);
 
   const displayName = useMemo(() => {
     return (
@@ -92,8 +117,12 @@ export default function Sidebar({ isOpen, onClose }) {
   }, [displayName]);
 
   async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      /* still navigate away */
+    }
     router.push("/");
     router.refresh();
   }

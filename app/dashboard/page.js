@@ -16,8 +16,8 @@ import {
   Download,
   Trash2,
 } from "lucide-react";
-import { notebookSourcesToPdfBlob } from "@/lib/notebook-sources-pdf";
 import { useBookmarkSetup } from "@/components/dashboard/BookmarkSetupProvider";
+import { refreshDashboardSidebar } from "@/lib/dashboard-events";
 
 function formatLastEdited(iso) {
   if (!iso) return "—";
@@ -37,22 +37,28 @@ function sourcesCountPhrase(n) {
   return c === 1 ? "1 source" : `${c} sources`;
 }
 
-function downloadSourcesExport(notebookTitle, items) {
-  const safe =
-    String(notebookTitle || "notebook")
-      .replace(/[^a-z0-9]+/gi, "-")
-      .replace(/^-|-$/g, "")
-      .toLowerCase() || "notebook";
-  const blob = notebookSourcesToPdfBlob({
-    notebookTitle,
-    items,
-    exportedAt: new Date().toISOString(),
-  });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `memora-${safe}-sources.pdf`;
-  a.click();
-  URL.revokeObjectURL(a.href);
+async function downloadSourcesExport(notebookTitle, items) {
+  try {
+    const { notebookSourcesToPdfBlob } = await import("@/lib/notebook-sources-pdf");
+    const safe =
+      String(notebookTitle || "notebook")
+        .replace(/[^a-z0-9]+/gi, "-")
+        .replace(/^-|-$/g, "")
+        .toLowerCase() || "notebook";
+    const blob = notebookSourcesToPdfBlob({
+      notebookTitle,
+      items,
+      exportedAt: new Date().toISOString(),
+    });
+    const a = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = `memora-${safe}-sources.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 export default function DashboardHome() {
@@ -72,8 +78,8 @@ export default function DashboardHome() {
         fetch("/api/sources", { credentials: "include", cache: "no-store" }),
         fetch("/api/folders", { credentials: "include", cache: "no-store" }),
       ]);
-      const sPayload = await sRes.json();
-      const fPayload = await fRes.json();
+      const sPayload = await sRes.json().catch(() => ({}));
+      const fPayload = await fRes.json().catch(() => ({}));
       if (!sRes.ok) throw new Error(sPayload.error || "Failed to load sources");
       if (!fRes.ok) throw new Error(fPayload.error || "Failed to load notebooks");
       setSources(sPayload.data || []);
@@ -105,6 +111,7 @@ export default function DashboardHome() {
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload.error || "Delete failed");
       await load();
+      refreshDashboardSidebar();
     } catch (e) {
       setError(e.message || "Could not delete notebook");
     } finally {
@@ -130,6 +137,7 @@ export default function DashboardHome() {
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload.error || "Delete all failed");
       await load();
+      refreshDashboardSidebar();
     } catch (e) {
       setError(e.message || "Could not delete all notebooks");
     } finally {
@@ -157,9 +165,10 @@ export default function DashboardHome() {
         credentials: "include",
         body: JSON.stringify({ is_favorite: next }),
       });
-      const payload = await res.json();
+      const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload.error || "Update failed");
       setFolders((prev) => prev.map((f) => (f.id === folder.id ? payload.data : f)));
+      refreshDashboardSidebar();
     } catch (e) {
       setError(e.message || "Could not update favorite");
     } finally {
@@ -180,7 +189,7 @@ export default function DashboardHome() {
         credentials: "include",
         body: JSON.stringify({ tags: raw }),
       });
-      const payload = await res.json();
+      const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload.error || "Update failed");
       setFolders((prev) => prev.map((f) => (f.id === folder.id ? payload.data : f)));
     } catch (e) {
@@ -201,9 +210,10 @@ export default function DashboardHome() {
         credentials: "include",
         body: JSON.stringify({ name: name.trim() }),
       });
-      const payload = await res.json();
+      const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload.error || "Could not create notebook");
       setFolders((prev) => [...prev, payload.data].sort((a, b) => String(a.name).localeCompare(String(b.name))));
+      refreshDashboardSidebar();
     } catch (e) {
       setError(e.message || "Could not create notebook");
     }
@@ -369,7 +379,7 @@ export default function DashboardHome() {
                             </div>
                             <button
                               type="button"
-                              onClick={() => downloadSourcesExport(folder.name, inFolder)}
+                              onClick={() => void downloadSourcesExport(folder.name, inFolder)}
                               className="shrink-0 p-2 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition-colors"
                               title="Download sources in this notebook (PDF)"
                               aria-label={`Download ${folderCount} sources as PDF`}

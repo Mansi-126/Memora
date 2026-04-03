@@ -38,18 +38,13 @@ export default function BookmarkSetupProvider({ children }) {
     if (params.get("first_login") !== "1") return;
     params.delete("first_login");
     const qs = params.toString();
-    const next = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
-    window.history.replaceState({}, "", next);
-    if (!window.localStorage.getItem(BOOKMARK_INSTALLED_KEY)) {
-      queueMicrotask(() => setShowInstallModal(true));
-    }
+    window.history.replaceState({}, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
   }, []);
 
   useEffect(() => {
     if (!user || typeof window === "undefined") return;
-    if (!window.localStorage.getItem(BOOKMARK_INSTALLED_KEY)) {
-      queueMicrotask(() => setShowInstallModal(true));
-    }
+    if (window.localStorage.getItem(BOOKMARK_INSTALLED_KEY)) return;
+    queueMicrotask(() => setShowInstallModal(true));
   }, [user]);
 
   const bookmarkletHref = useMemo(() => {
@@ -79,9 +74,13 @@ export default function BookmarkSetupProvider({ children }) {
   }, []);
 
   const copyBookmarklet = useCallback(async () => {
-    await navigator.clipboard.writeText(bookmarkletHref);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    try {
+      await navigator.clipboard.writeText(bookmarkletHref);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
   }, [bookmarkletHref]);
 
   const completeBookmarkInstall = useCallback(() => {
@@ -93,6 +92,8 @@ export default function BookmarkSetupProvider({ children }) {
 
   const openBookmarkModal = useCallback(() => setShowInstallModal(true), []);
 
+  const closeBookmarkModal = useCallback(() => setShowInstallModal(false), []);
+
   const value = useMemo(
     () => ({ openBookmarkModal }),
     [openBookmarkModal]
@@ -103,7 +104,7 @@ export default function BookmarkSetupProvider({ children }) {
       {children}
       <BookmarkInstallModal
         open={showInstallModal}
-        onClose={() => setShowInstallModal(false)}
+        onClose={closeBookmarkModal}
         onInstalled={completeBookmarkInstall}
         bookmarkletHref={bookmarkletHref}
         onCopy={copyBookmarklet}

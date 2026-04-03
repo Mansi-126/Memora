@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseUrlsFromBulkText } from "@/lib/bulk-import-urls";
+import { isValidUuid } from "@/lib/validation";
 import { randomUUID } from "crypto";
 
 function jsonError(message, status = 400) {
@@ -74,6 +75,21 @@ export async function POST(request) {
       ? null
       : String(folderIdRaw).trim();
 
+  if (folderId && !isValidUuid(folderId)) {
+    return jsonError("Invalid folder_id", 400);
+  }
+
+  if (folderId) {
+    const { data: folder, error: folderErr } = await supabase
+      .from("folders")
+      .select("id")
+      .eq("id", folderId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (folderErr) return jsonError(folderErr.message, 500);
+    if (!folder) return jsonError("Collection not found", 404);
+  }
+
   const urls = parseUrlsFromBulkText(text);
   if (urls.length === 0) {
     if (isManualPaste) {
@@ -128,18 +144,6 @@ export async function POST(request) {
       `Too many URLs (${urls.length}). Maximum per import is ${MAX_URLS_PER_REQUEST}. Split into smaller batches.`,
       400
     );
-  }
-
-  if (folderId) {
-    const { data: folder, error: folderErr } = await supabase
-      .from("folders")
-      .select("id")
-      .eq("id", folderId)
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (folderErr) return jsonError(folderErr.message, 500);
-    if (!folder) return jsonError("Collection not found", 404);
   }
 
   const imported = [];

@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { MEMORA_DASHBOARD_REFRESH, refreshDashboardSidebar } from "@/lib/dashboard-events";
 import { 
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   Download, FolderInput, Trash2, ChevronDown, FolderPlus, 
@@ -23,40 +24,46 @@ function SourcesPageContent() {
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
 
-  async function loadSources() {
+  const loadSources = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
       const folderQuery = selectedFolderId ? `?folder_id=${encodeURIComponent(selectedFolderId)}` : "";
-      const response = await fetch(`/api/sources${folderQuery}`, { credentials: "include" });
-      const payload = await response.json();
+      const response = await fetch(`/api/sources${folderQuery}`, { credentials: "include", cache: "no-store" });
+      const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Failed to load sources");
-      setSources(payload.data || []);
+      setSources(Array.isArray(payload.data) ? payload.data : []);
       setSelectedIds([]);
     } catch (err) {
       setError(err.message || "Unable to fetch sources");
     } finally {
       setLoading(false);
     }
-  }
+  }, [selectedFolderId]);
 
-  async function loadFolders() {
+  const loadFolders = useCallback(async () => {
     try {
-      const response = await fetch("/api/folders", { credentials: "include" });
-      const payload = await response.json();
+      const response = await fetch("/api/folders", { credentials: "include", cache: "no-store" });
+      const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Failed to load folders");
-      setFolders(payload.data || []);
+      setFolders(Array.isArray(payload.data) ? payload.data : []);
     } catch (err) {
       setError(err.message || "Unable to fetch folders");
     }
-  }
+  }, []);
 
   useEffect(() => {
-    loadSources();
-    // Folders list is independent of current filter; loading repeatedly is harmless and keeps UI fresh.
-    loadFolders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedFolderId]);
+    void loadSources();
+  }, [loadSources]);
+
+  useEffect(() => {
+    void loadFolders();
+    function onDashboardRefresh() {
+      void loadFolders();
+    }
+    window.addEventListener(MEMORA_DASHBOARD_REFRESH, onDashboardRefresh);
+    return () => window.removeEventListener(MEMORA_DASHBOARD_REFRESH, onDashboardRefresh);
+  }, [loadFolders]);
 
   useEffect(() => {
     const fromUrl = searchParams.get("q");
@@ -116,12 +123,13 @@ function SourcesPageContent() {
         credentials: "include",
         body: JSON.stringify({ name }),
       });
-      const payload = await response.json();
+      const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Failed to create folder");
       setFolders((prev) => [...prev, payload.data].sort((a, b) => a.name.localeCompare(b.name)));
       setNewFolderName("");
       setShowNewFolderInput(false);
       setActionStatus("Folder created");
+      refreshDashboardSidebar();
     } catch (err) {
       setActionStatus(err.message || "Failed to create folder");
     }
@@ -137,11 +145,12 @@ function SourcesPageContent() {
         credentials: "include",
         body: JSON.stringify({ ids: selectedIds, folder_id: folderId }),
       });
-      const payload = await response.json();
+      const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Failed to move sources");
       setActionStatus(`Moved ${payload.data?.length ?? 0} item(s)`);
       setShowMoveMenu(false);
       await loadSources();
+      refreshDashboardSidebar();
     } catch (err) {
       setActionStatus(err.message || "Failed to move sources");
     }
@@ -159,10 +168,11 @@ function SourcesPageContent() {
         credentials: "include",
         body: JSON.stringify({ ids: selectedIds }),
       });
-      const payload = await response.json();
+      const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Failed to delete sources");
       setActionStatus(`Deleted ${payload.data?.length ?? 0} item(s)`);
       await loadSources();
+      refreshDashboardSidebar();
     } catch (err) {
       setActionStatus(err.message || "Failed to delete sources");
     }
@@ -181,9 +191,10 @@ function SourcesPageContent() {
         credentials: "include",
         body: JSON.stringify({ id: item.id, is_favorite: nextFavorite }),
       });
-      const payload = await response.json();
+      const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Failed to update favorite");
       setActionStatus(nextFavorite ? "Added to favorites" : "Removed from favorites");
+      refreshDashboardSidebar();
     } catch (err) {
       setSources(previous);
       setActionStatus(err.message || "Failed to update favorite");

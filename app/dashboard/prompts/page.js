@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { Plus, Download, FileUp, Loader2, Star, Pencil, Trash2, X } from "lucide-react";
-import { promptsBackupToPdfBlob } from "@/lib/prompts-backup-pdf";
 
 /** One CSV row → fields (handles quoted fields and commas inside quotes). */
 function parseCsvLine(line) {
@@ -270,9 +269,10 @@ export default function PromptsLibraryPage() {
     URL.revokeObjectURL(a.href);
   }
 
-  function downloadBackup() {
+  async function downloadBackup() {
     setError("");
     try {
+      const { promptsBackupToPdfBlob } = await import("@/lib/prompts-backup-pdf");
       const exportedAt = new Date().toISOString();
       const blob = promptsBackupToPdfBlob({
         promptFolders,
@@ -513,7 +513,7 @@ export default function PromptsLibraryPage() {
               </button>
               <button
                 type="button"
-                onClick={downloadBackup}
+                onClick={() => void downloadBackup()}
                 className="flex items-center gap-1.5 bg-white border border-gray-200 px-3 py-2 rounded-lg text-[13px] font-bold text-gray-700 hover:bg-gray-50 shadow-sm transition-all"
               >
                 <Download size={14} className="text-gray-500" /> Backup
