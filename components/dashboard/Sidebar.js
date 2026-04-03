@@ -203,34 +203,40 @@ export default function Sidebar({ isOpen, onClose }) {
       </div>
 
       {/* BOTTOM ACCOUNT SECTION */}
-      <div className="p-4 shrink-0 mx-2 mb-2">
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#34682c] rounded-full flex items-center justify-center text-white font-medium text-[20px] overflow-hidden">
-              {user?.user_metadata?.avatar_url || user?.user_metadata?.picture ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={user.user_metadata.avatar_url ?? user.user_metadata.picture}
-                  alt={displayName}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                avatarInitial
-              )}
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[16px] font-bold text-gray-900 leading-tight">{displayName}</span>
-              <span className="text-[13px] font-medium text-gray-400 leading-tight mt-0.5">
-                {user?.email || ""}
+      <div className="p-3 sm:p-4 shrink-0 mx-2 mb-2 border-t border-gray-100">
+        <div className="flex items-center gap-2 w-full min-w-0">
+          <div className="w-10 h-10 shrink-0 bg-[#34682c] rounded-full flex items-center justify-center text-white font-medium text-[20px] overflow-hidden">
+            {user?.user_metadata?.avatar_url || user?.user_metadata?.picture ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={user.user_metadata.avatar_url ?? user.user_metadata.picture}
+                alt={displayName}
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              avatarInitial
+            )}
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
+            <span className="text-[15px] font-bold text-gray-900 leading-snug truncate" title={displayName}>
+              {displayName}
+            </span>
+            {user?.email ? (
+              <span
+                className="text-[12px] font-medium text-gray-400 leading-snug mt-0.5 truncate"
+                title={user.email}
+              >
+                {user.email}
               </span>
-            </div>
+            ) : null}
           </div>
           <button
             type="button"
             onClick={handleSignOut}
-            className="text-gray-400 hover:text-gray-700 transition-colors"
+            className="shrink-0 flex items-center justify-center p-2 rounded-lg text-gray-400 hover:text-gray-800 hover:bg-gray-100 transition-colors"
             title="Sign out"
+            aria-label="Sign out"
           >
             <LogOut size={20} strokeWidth={2} />
           </button>
