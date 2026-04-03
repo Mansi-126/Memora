@@ -4,11 +4,13 @@ import { useState } from "react";
 import TopNavbar from "@/components/dashboard/TopNavbar";
 import Sidebar from "@/components/dashboard/Sidebar";
 import BottomTabBar from "@/components/dashboard/BottomTabBar";
+import BookmarkSetupProvider from "@/components/dashboard/BookmarkSetupProvider";
 
 export default function DashboardLayout({ children }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
+    <BookmarkSetupProvider>
     <div className="flex h-screen bg-memora-bg font-sans text-memora-text overflow-hidden">
       
       {/* Desktop Sidebar (fixed left) */}
@@ -46,5 +48,6 @@ export default function DashboardLayout({ children }) {
         <BottomTabBar />
       </div>
     </div>
+    </BookmarkSetupProvider>
   );
 }

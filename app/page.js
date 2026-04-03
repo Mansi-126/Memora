@@ -136,12 +136,12 @@ export default function Home() {
               </div>
             </Link>
           ) : (
-            <Link
-              href="/login"
-              className="bg-memora-primary hover:bg-memora-dark text-white px-5 py-2.5 rounded-full font-medium transition-all shadow-[0_0_15px_rgba(34,197,94,0.4)] hover:shadow-[0_0_20px_rgba(34,197,94,0.6)]"
-            >
-              Get Started Free &rarr;
-            </Link>
+          <Link 
+            href="/login" 
+            className="bg-memora-primary hover:bg-memora-dark text-white px-5 py-2.5 rounded-full font-medium transition-all shadow-[0_0_15px_rgba(34,197,94,0.4)] hover:shadow-[0_0_20px_rgba(34,197,94,0.6)]"
+          >
+            Get Started Free &rarr;
+          </Link>
           )}
         </div>
       </nav>

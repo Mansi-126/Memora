@@ -3,7 +3,7 @@ import { CheckCircle2, Bookmark, MessageSquare, Layers, Search, Share } from "lu
 export default function RecentActivity() {
   const activities = [
     { icon: <CheckCircle2 size={14} />, color: "bg-green-100 text-green-600", title: "PDF imported", target: "Research Notes", time: "2m ago" },
-    { icon: <Bookmark size={14} />, color: "bg-orange-100 text-orange-600", title: "Bookmarked", target: "Web Articles", time: "1h ago" },
+    { icon: <Bookmark size={14} fill="currentColor" />, color: "bg-orange-100 text-orange-600", title: "Bookmarked", target: "Web Articles", time: "1h ago" },
     { icon: <MessageSquare size={14} />, color: "bg-blue-100 text-blue-600", title: "Chat saved", target: "AI Experiments", time: "3h ago" },
     { icon: <Layers size={14} />, color: "bg-purple-100 text-purple-600", title: "10 cards gen", target: "Work Projects", time: "5h ago" },
     { icon: <Search size={14} />, color: "bg-memora-light text-memora-primary", title: "Cross search", target: "All notebooks", time: "Yesterday" },

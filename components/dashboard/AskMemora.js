@@ -72,7 +72,7 @@ export default function AskMemora() {
               </div>
               <div className="flex gap-2">
                  <button className="text-gray-400 hover:text-memora-dark p-1.5 rounded bg-white border border-gray-200 shadow-sm"><Copy size={14} /></button>
-                 <button className="text-gray-400 hover:text-memora-dark p-1.5 rounded bg-white border border-gray-200 shadow-sm"><Bookmark size={14} /></button>
+                 <button className="text-gray-400 hover:text-memora-dark p-1.5 rounded bg-white border border-gray-200 shadow-sm"><Bookmark size={14} fill="currentColor" /></button>
               </div>
            </div>
            
@@ -84,7 +84,7 @@ export default function AskMemora() {
              <div className="text-[10px] font-black tracking-widest text-gray-400 uppercase mb-3">Sources Used</div>
              <div className="flex flex-wrap gap-2">
                 <span className="flex items-center gap-1.5 text-xs font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-sm cursor-pointer hover:border-memora-primary"><FileText size={12} className="text-memora-primary" /> React Notes PDF &middot; pg 3</span>
-                <span className="flex items-center gap-1.5 text-xs font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-sm cursor-pointer hover:border-memora-primary"><Bookmark size={12} className="text-orange-500" /> ChatGPT Chat &middot; Mar 15</span>
+                <span className="flex items-center gap-1.5 text-xs font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-sm cursor-pointer hover:border-memora-primary"><Bookmark size={12} fill="currentColor" className="text-orange-500" /> ChatGPT Chat &middot; Mar 15</span>
                 <span className="flex items-center gap-1.5 text-xs font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-sm cursor-pointer hover:border-memora-primary"><ArrowRight size={12} className="text-blue-500" /> Dev.to Article &middot; Feb 28</span>
              </div>
            </div>

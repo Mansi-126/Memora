@@ -18,7 +18,7 @@ export default function QuickImportWidget() {
            <ArrowRight size={14} className="text-gray-300 group-hover:text-memora-primary group-hover:translate-x-1 transition-all" />
         </button>
         <button className="w-full flex items-center justify-between bg-white border border-memora-primary/30 hover:border-memora-primary hover:bg-memora-light px-4 py-2.5 rounded-lg text-sm font-bold text-memora-dark transition-all group">
-           <span className="flex items-center gap-2.5"><Bookmark size={16} /> Use Bookmark</span>
+           <span className="flex items-center gap-2.5"><Bookmark size={16} fill="currentColor" /> Use Bookmark</span>
            <ArrowRight size={14} className="text-gray-300 group-hover:text-memora-primary group-hover:translate-x-1 transition-all" />
         </button>
       </div>

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Book, FileText, Layers, Settings, Folder, Star, GitMerge, Columns, MessageSquare, Download, Grid, LogOut } from "lucide-react";
+import { Book, FileText, Layers, Settings, Folder, Star, GitMerge, Columns, MessageSquare, Download, Grid, LogOut, Leaf } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -151,13 +151,11 @@ export default function Sidebar({ isOpen, onClose }) {
       <div className="h-[72px] flex items-center px-4 gap-3 shrink-0">
         <Link
           href="/"
-          className="flex items-center gap-3 min-w-0 flex-1 rounded-lg -ml-1 pl-1 py-1 hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-2 min-w-0 flex-1 rounded-lg -ml-1 pl-1 py-1 hover:bg-gray-50 transition-colors"
           title="Back to Memora home"
         >
-          <div className="w-6 h-6 bg-memora-primary rounded-md flex items-center justify-center text-white font-bold text-xs shrink-0">
-            K
-          </div>
-          <span className="font-semibold text-[15px] text-gray-900 truncate">Memora</span>
+          <Leaf className="text-memora-primary drop-shadow-sm shrink-0" size={26} />
+          <span className="font-heading font-bold text-[15px] tracking-tight text-memora-text truncate">Memora</span>
         </Link>
         <button
           type="button"

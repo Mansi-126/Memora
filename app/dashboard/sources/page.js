@@ -220,7 +220,7 @@ function SourcesPageContent() {
           {sources.length} TOTAL
         </div>
       </div>
-
+      
       <p className="text-sm font-medium text-gray-500 mb-4">
         {selectedFolderId ? `Showing folder: ${folderNameById.get(selectedFolderId) || "Unknown"}` : "Showing every folder"}
       </p>
@@ -241,8 +241,8 @@ function SourcesPageContent() {
               onClick={() => setShowMoveMenu((s) => !s)}
               className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors disabled:text-gray-300 disabled:cursor-not-allowed"
             >
-              <FolderInput size={16} strokeWidth={2.5} /> Move to Folder
-            </button>
+            <FolderInput size={16} strokeWidth={2.5} /> Move to Folder
+          </button>
             {showMoveMenu ? (
               <div className="absolute left-0 mt-2 z-20 w-56 bg-white border border-gray-200 rounded-lg shadow-lg p-1">
                 <button
@@ -371,15 +371,15 @@ function SourcesPageContent() {
         ) : error ? (
           <div className="p-12 text-center text-red-500 font-medium">{error}</div>
         ) : filteredSources.length === 0 ? (
-          <div className="p-12 flex flex-col items-center justify-center text-center min-h-[460px]">
-            <div className="w-[64px] h-[64px] bg-[#E8F5EE] rounded-[16px] flex items-center justify-center text-memora-dark mb-6">
-              <Folder size={32} strokeWidth={2.5} />
-            </div>
-            <h3 className="text-[20px] font-bold text-gray-900 mb-2">No Sources Yet</h3>
-            <p className="text-gray-500 font-medium text-[14px]">
-              You haven&apos;t imported any documents, links, or media yet.
-            </p>
+        <div className="p-12 flex flex-col items-center justify-center text-center min-h-[460px]">
+          <div className="w-[64px] h-[64px] bg-[#E8F5EE] rounded-[16px] flex items-center justify-center text-memora-dark mb-6">
+            <Folder size={32} strokeWidth={2.5} />
           </div>
+          <h3 className="text-[20px] font-bold text-gray-900 mb-2">No Sources Yet</h3>
+          <p className="text-gray-500 font-medium text-[14px]">
+              You haven&apos;t imported any documents, links, or media yet.
+          </p>
+        </div>
         ) : (
           <div className="divide-y divide-gray-100">
             {filteredSources.map((item) => (
