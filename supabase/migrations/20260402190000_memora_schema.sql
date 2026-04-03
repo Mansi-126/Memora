@@ -2,6 +2,7 @@
 -- Idempotent where possible. Combines supabase/schema/01–03.
 -- UI: Collections = folders; Artifacts = sources where source_type='artifact';
 --      Favorites = sources where is_favorite; Sources = all sources (filtered in app).
+--      Prompts = public.prompts + public.prompt_folders (Tools › Prompts).
 
 -- ========== 01_tables.sql ==========
 create extension if not exists "pgcrypto";
@@ -17,6 +18,16 @@ create table if not exists public.folders (
 
 create index if not exists folders_user_id_idx
   on public.folders (user_id);
+
+alter table public.folders
+  add column if not exists is_favorite boolean not null default false;
+
+alter table public.folders
+  add column if not exists tags text[] not null default '{}'::text[];
+
+create index if not exists folders_user_favorite_idx
+  on public.folders (user_id, is_favorite)
+  where is_favorite = true;
 
 create table if not exists public.sources (
   id uuid primary key default gen_random_uuid(),
@@ -90,6 +101,41 @@ comment on column public.sources.is_favorite is
 
 comment on column public.sources.folder_id is
   'Optional collection membership; must reference public.folders owned by the same user (enforced in RLS).';
+
+create table if not exists public.prompt_folders (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  name text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, name)
+);
+
+create index if not exists prompt_folders_user_id_idx on public.prompt_folders (user_id);
+
+create table if not exists public.prompts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  folder_id uuid references public.prompt_folders (id) on delete set null,
+  title text not null default 'Untitled prompt',
+  body text not null default '',
+  is_favorite boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists prompts_user_id_created_at_idx on public.prompts (user_id, created_at desc);
+create index if not exists prompts_user_folder_idx on public.prompts (user_id, folder_id);
+
+drop trigger if exists trg_prompt_folders_updated_at on public.prompt_folders;
+create trigger trg_prompt_folders_updated_at
+before update on public.prompt_folders
+for each row execute function public.memora_set_updated_at();
+
+drop trigger if exists trg_prompts_updated_at on public.prompts;
+create trigger trg_prompts_updated_at
+before update on public.prompts
+for each row execute function public.memora_set_updated_at();
 
 -- ========== 02_rls.sql ==========
 alter table public.folders enable row level security;
@@ -178,9 +224,79 @@ for delete
 to authenticated
 using (user_id = (select auth.uid()));
 
+alter table public.prompt_folders enable row level security;
+alter table public.prompt_folders force row level security;
+
+alter table public.prompts enable row level security;
+alter table public.prompts force row level security;
+
+drop policy if exists "prompt_folders_select_own" on public.prompt_folders;
+create policy "prompt_folders_select_own"
+on public.prompt_folders for select to authenticated
+using (user_id = (select auth.uid()));
+
+drop policy if exists "prompt_folders_insert_own" on public.prompt_folders;
+create policy "prompt_folders_insert_own"
+on public.prompt_folders for insert to authenticated
+with check (user_id = (select auth.uid()));
+
+drop policy if exists "prompt_folders_update_own" on public.prompt_folders;
+create policy "prompt_folders_update_own"
+on public.prompt_folders for update to authenticated
+using (user_id = (select auth.uid()))
+with check (user_id = (select auth.uid()));
+
+drop policy if exists "prompt_folders_delete_own" on public.prompt_folders;
+create policy "prompt_folders_delete_own"
+on public.prompt_folders for delete to authenticated
+using (user_id = (select auth.uid()));
+
+drop policy if exists "prompts_select_own" on public.prompts;
+create policy "prompts_select_own"
+on public.prompts for select to authenticated
+using (user_id = (select auth.uid()));
+
+drop policy if exists "prompts_insert_own" on public.prompts;
+create policy "prompts_insert_own"
+on public.prompts for insert to authenticated
+with check (
+  user_id = (select auth.uid())
+  and (
+    folder_id is null
+    or exists (
+      select 1 from public.prompt_folders pf
+      where pf.id = folder_id and pf.user_id = (select auth.uid())
+    )
+  )
+);
+
+drop policy if exists "prompts_update_own" on public.prompts;
+create policy "prompts_update_own"
+on public.prompts for update to authenticated
+using (user_id = (select auth.uid()))
+with check (
+  user_id = (select auth.uid())
+  and (
+    folder_id is null
+    or exists (
+      select 1 from public.prompt_folders pf
+      where pf.id = folder_id and pf.user_id = (select auth.uid())
+    )
+  )
+);
+
+drop policy if exists "prompts_delete_own" on public.prompts;
+create policy "prompts_delete_own"
+on public.prompts for delete to authenticated
+using (user_id = (select auth.uid()));
+
 -- ========== 03_grants.sql ==========
 revoke all on public.folders from public;
 revoke all on public.sources from public;
+revoke all on public.prompt_folders from public;
+revoke all on public.prompts from public;
 
 grant select, insert, update, delete on public.folders to authenticated;
 grant select, insert, update, delete on public.sources to authenticated;
+grant select, insert, update, delete on public.prompt_folders to authenticated;
+grant select, insert, update, delete on public.prompts to authenticated;

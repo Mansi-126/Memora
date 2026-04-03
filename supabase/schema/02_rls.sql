@@ -95,3 +95,72 @@ on public.sources
 for delete
 to authenticated
 using (user_id = (select auth.uid()));
+
+-- -----------------------------------------------------------------------------
+-- public.prompt_folders / public.prompts
+-- -----------------------------------------------------------------------------
+alter table public.prompt_folders enable row level security;
+alter table public.prompt_folders force row level security;
+
+alter table public.prompts enable row level security;
+alter table public.prompts force row level security;
+
+drop policy if exists "prompt_folders_select_own" on public.prompt_folders;
+create policy "prompt_folders_select_own"
+on public.prompt_folders for select to authenticated
+using (user_id = (select auth.uid()));
+
+drop policy if exists "prompt_folders_insert_own" on public.prompt_folders;
+create policy "prompt_folders_insert_own"
+on public.prompt_folders for insert to authenticated
+with check (user_id = (select auth.uid()));
+
+drop policy if exists "prompt_folders_update_own" on public.prompt_folders;
+create policy "prompt_folders_update_own"
+on public.prompt_folders for update to authenticated
+using (user_id = (select auth.uid()))
+with check (user_id = (select auth.uid()));
+
+drop policy if exists "prompt_folders_delete_own" on public.prompt_folders;
+create policy "prompt_folders_delete_own"
+on public.prompt_folders for delete to authenticated
+using (user_id = (select auth.uid()));
+
+drop policy if exists "prompts_select_own" on public.prompts;
+create policy "prompts_select_own"
+on public.prompts for select to authenticated
+using (user_id = (select auth.uid()));
+
+drop policy if exists "prompts_insert_own" on public.prompts;
+create policy "prompts_insert_own"
+on public.prompts for insert to authenticated
+with check (
+  user_id = (select auth.uid())
+  and (
+    folder_id is null
+    or exists (
+      select 1 from public.prompt_folders pf
+      where pf.id = folder_id and pf.user_id = (select auth.uid())
+    )
+  )
+);
+
+drop policy if exists "prompts_update_own" on public.prompts;
+create policy "prompts_update_own"
+on public.prompts for update to authenticated
+using (user_id = (select auth.uid()))
+with check (
+  user_id = (select auth.uid())
+  and (
+    folder_id is null
+    or exists (
+      select 1 from public.prompt_folders pf
+      where pf.id = folder_id and pf.user_id = (select auth.uid())
+    )
+  )
+);
+
+drop policy if exists "prompts_delete_own" on public.prompts;
+create policy "prompts_delete_own"
+on public.prompts for delete to authenticated
+using (user_id = (select auth.uid()));

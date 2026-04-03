@@ -6,8 +6,12 @@
 
 revoke all on public.folders from public;
 revoke all on public.sources from public;
+revoke all on public.prompt_folders from public;
+revoke all on public.prompts from public;
 
 grant select, insert, update, delete on public.folders to authenticated;
 grant select, insert, update, delete on public.sources to authenticated;
+grant select, insert, update, delete on public.prompt_folders to authenticated;
+grant select, insert, update, delete on public.prompts to authenticated;
 
 -- Sequences: not used for uuid PKs; omit.

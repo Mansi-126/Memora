@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Book, FileText, Layers, Settings, Folder, Star, Mic, GitMerge, Columns, Zap, MessageSquare, Download, File, Edit3, Grid, LogOut } from "lucide-react";
+import { Book, FileText, Layers, Settings, Folder, Star, GitMerge, Columns, MessageSquare, Download, Grid, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -54,12 +54,16 @@ export default function Sidebar({ isOpen, onClose }) {
         if (cancelled) return;
 
         const foldersCount = Array.isArray(foldersPayload.data) ? foldersPayload.data.length : 0;
+        const favoriteSourcesCount = Array.isArray(favoritesPayload.data) ? favoritesPayload.data.length : 0;
+        const favoriteFoldersCount = Array.isArray(foldersPayload.data)
+          ? foldersPayload.data.filter((f) => f.is_favorite === true).length
+          : 0;
         setCounts({
           notebooks: foldersCount,
           sources: Array.isArray(sourcesPayload.data) ? sourcesPayload.data.length : 0,
           artifacts: Array.isArray(artifactsPayload.data) ? artifactsPayload.data.length : 0,
           collections: foldersCount,
-          favorites: Array.isArray(favoritesPayload.data) ? favoritesPayload.data.length : 0,
+          favorites: favoriteSourcesCount + favoriteFoldersCount,
         });
       } catch {
         if (cancelled) return;
@@ -107,18 +111,13 @@ export default function Sidebar({ isOpen, onClose }) {
   const organizeItems = [
     { name: "Collections", href: "/dashboard/collections", icon: Folder, badge: counts.collections },
     { name: "Favorites", href: "/dashboard/favorites", icon: Star, badge: counts.favorites },
-    { name: "Podcasts", href: "/dashboard/podcasts", icon: Mic },
   ];
 
   const toolItems = [
     { name: "Merge Notebooks", href: "/dashboard/merge", icon: GitMerge },
     { name: "Compare", href: "/dashboard/compare", icon: Columns },
-    { name: "Automation", href: "/dashboard/automation", icon: Zap },
     { name: "Prompts", href: "/dashboard/prompts", icon: MessageSquare },
     { name: "Bulk Import", href: "/dashboard/import", icon: Download },
-    { name: "Notebook Templates", href: "/dashboard/templates/notebook", icon: File },
-    { name: "Source Templates", href: "/dashboard/templates/source", icon: File },
-    { name: "Note Templates", href: "/dashboard/templates/note", icon: Edit3 },
   ];
 
   const renderNavGroup = (title, items) => (

@@ -26,6 +26,16 @@ create table if not exists public.folders (
 create index if not exists folders_user_id_idx
   on public.folders (user_id);
 
+alter table public.folders
+  add column if not exists is_favorite boolean not null default false;
+
+alter table public.folders
+  add column if not exists tags text[] not null default '{}'::text[];
+
+create index if not exists folders_user_favorite_idx
+  on public.folders (user_id, is_favorite)
+  where is_favorite = true;
+
 -- -----------------------------------------------------------------------------
 -- public.sources — bookmarks, artifacts, imports, etc.
 -- -----------------------------------------------------------------------------
@@ -106,3 +116,41 @@ comment on column public.sources.is_favorite is
 
 comment on column public.sources.folder_id is
   'Optional collection membership; must reference public.folders owned by the same user (enforced in RLS).';
+
+-- -----------------------------------------------------------------------------
+-- public.prompt_folders / public.prompts — saved prompt templates (Tools › Prompts)
+-- -----------------------------------------------------------------------------
+create table if not exists public.prompt_folders (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  name text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, name)
+);
+
+create index if not exists prompt_folders_user_id_idx on public.prompt_folders (user_id);
+
+create table if not exists public.prompts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  folder_id uuid references public.prompt_folders (id) on delete set null,
+  title text not null default 'Untitled prompt',
+  body text not null default '',
+  is_favorite boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists prompts_user_id_created_at_idx on public.prompts (user_id, created_at desc);
+create index if not exists prompts_user_folder_idx on public.prompts (user_id, folder_id);
+
+drop trigger if exists trg_prompt_folders_updated_at on public.prompt_folders;
+create trigger trg_prompt_folders_updated_at
+before update on public.prompt_folders
+for each row execute function public.memora_set_updated_at();
+
+drop trigger if exists trg_prompts_updated_at on public.prompts;
+create trigger trg_prompts_updated_at
+before update on public.prompts
+for each row execute function public.memora_set_updated_at();

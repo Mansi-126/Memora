@@ -45,7 +45,7 @@ export default function Home() {
     { group: "Import", icon: <Globe size={20} />, name: "Web URL Fetch", desc: "Paste any article or blog URL to save full content" },
     { group: "Import", icon: <Mail size={20} />, name: "Email Inbox", desc: "Forward emails to save@you.memora.app — auto-imported" },
     { group: "Import", icon: <FileSpreadsheet size={20} />, name: "CSV Bulk Import", desc: "Upload CSV of URLs for bulk import" },
-    { group: "Import", icon: <Mic size={20} />, name: "Audio Transcribe", desc: "Upload audio/podcast, Memora transcribes and indexes" },
+    { group: "Import", icon: <Mic size={20} />, name: "Audio Transcribe", desc: "Upload audio files, Memora transcribes and indexes" },
     
     { group: "Search", icon: <Search size={20} />, name: "Cross-Notebook Search", desc: "Search across every notebook simultaneously" },
     { group: "Search", icon: <Zap size={20} />, name: "AI Answer Engine", desc: "Get one synthesized answer with source citations" },
@@ -62,7 +62,6 @@ export default function Home() {
     { group: "Learn", icon: <Layers size={20} />, name: "Flashcards", desc: "Auto-generate flashcards from any source" },
     { group: "Learn", icon: <RefreshCw size={20} />, name: "Spaced Repetition", desc: "Smart review queue — review cards at the right time" },
     { group: "Learn", icon: <BookOpen size={20} />, name: "Quizzes", desc: "AI-generated quizzes from your saved content" },
-    { group: "Learn", icon: <Mic size={20} />, name: "Podcast Feed", desc: "Stream your notebooks as audio on any podcast app" },
     
     { group: "Export", icon: <Download size={20} />, name: "Markdown Export", desc: "Export entire notebook as a zip of Markdown files" },
     { group: "Export", icon: <RefreshCw size={20} />, name: "Google Docs Sync", desc: "One-click sync all sources to Google Drive" },
@@ -470,7 +469,7 @@ export default function Home() {
                 <li className="flex items-center gap-3"><Check size={18} className="text-white"/> Unlimited cross-search & AI queries</li>
                 <li className="flex items-center gap-3"><Check size={18} className="text-white"/> Bookmarklet + Email inbox import</li>
                 <li className="flex items-center gap-3"><Check size={18} className="text-white"/> Cloud sync across devices</li>
-                <li className="flex items-center gap-3"><Check size={18} className="text-white"/> Automation pipelines & Podcast feed</li>
+                <li className="flex items-center gap-3"><Check size={18} className="text-white"/> Merge, compare & prompts library</li>
                 <li className="flex items-center gap-3"><Check size={18} className="text-white"/> Bulk import & export</li>
                 <li className="flex items-center gap-3"><Check size={18} className="text-white"/> Priority support</li>
               </ul>

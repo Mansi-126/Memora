@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Folder, ArrowLeft, Files, FolderInput, Trash2 } from "lucide-react";
 
-export default function CollectionsPage() {
+function CollectionsPageContent() {
+  const searchParams = useSearchParams();
   const [folders, setFolders] = useState([]);
   const [sources, setSources] = useState([]);
   const [selectedFolderId, setSelectedFolderId] = useState("");
@@ -86,6 +88,14 @@ export default function CollectionsPage() {
     }
     load();
   }, [reloadData]);
+
+  useEffect(() => {
+    const fid = searchParams.get("folder");
+    if (!fid || folders.length === 0) return;
+    if (folders.some((f) => f.id === fid)) {
+      setSelectedFolderId(fid);
+    }
+  }, [searchParams, folders]);
 
   const selectedFolder = useMemo(
     () => folders.find((f) => f.id === selectedFolderId),
@@ -243,5 +253,19 @@ export default function CollectionsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CollectionsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-[1040px] w-full p-12 text-center text-gray-500 text-sm font-medium">
+          Loading collections…
+        </div>
+      }
+    >
+      <CollectionsPageContent />
+    </Suspense>
   );
 }
