@@ -34,3 +34,17 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+### Google login on Vercel (production)
+
+1. **Supabase** → Authentication → URL configuration  
+   - **Site URL:** `https://your-app.vercel.app`  
+   - **Redirect URLs:** include `https://your-app.vercel.app/auth/callback` (and `http://localhost:3000/auth/callback` for local dev).
+
+2. **Google Cloud Console** → OAuth client  
+   - **Authorized JavaScript origins:** your app origin(s), e.g. `https://your-app.vercel.app` and `http://localhost:3000`.  
+   - **Authorized redirect URIs:** must include Supabase’s callback (not your Next.js URL):  
+     `https://<PROJECT_REF>.supabase.co/auth/v1/callback`  
+     (`PROJECT_REF` is in the Supabase dashboard URL / Project Settings → API.)
+
+The auth **code** in the browser is handled by `/auth/callback` in this app; session cookies are set on that response so login persists after redirect.
