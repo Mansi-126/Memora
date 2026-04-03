@@ -402,9 +402,16 @@ function SourcesPageContent() {
                   <Link href={`/dashboard/sources/${item.id}`} className="font-semibold text-gray-900 block truncate hover:text-memora-primary">
                     {item.title}
                   </Link>
-                  <a href={item.source_url} target="_blank" rel="noreferrer" className="text-xs text-memora-primary truncate block mt-0.5">
-                    {item.source_url}
-                  </a>
+                  {/^https?:\/\//i.test(item.source_url || "") ? (
+                    <a
+                      href={item.source_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-memora-primary truncate block mt-0.5"
+                    >
+                      {item.source_url}
+                    </a>
+                  ) : null}
                 </div>
                 <div className="flex-1 min-w-[150px] p-4 border-t md:border-t-0 md:border-l border-gray-100 text-gray-700 truncate">
                   {item.folder_id ? folderNameById.get(item.folder_id) || "Unknown folder" : "Unfiled"}

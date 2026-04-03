@@ -119,17 +119,21 @@ export default function SourceDetailPage({ params }) {
           {dateLabel}
         </div>
 
-        <label className="block text-[11px] font-extrabold uppercase text-gray-400 tracking-wider mb-2">
-          ORIGINAL URL
-        </label>
-        <a
-          href={form.source_url}
-          target="_blank"
-          rel="noreferrer"
-          className="block text-[14px] font-medium text-memora-primary mb-6 truncate hover:underline"
-        >
-          {form.source_url}
-        </a>
+        {/^https?:\/\//i.test(form.source_url || "") ? (
+          <>
+            <label className="block text-[11px] font-extrabold uppercase text-gray-400 tracking-wider mb-2">
+              ORIGINAL URL
+            </label>
+            <a
+              href={form.source_url}
+              target="_blank"
+              rel="noreferrer"
+              className="block text-[14px] font-medium text-memora-primary mb-6 truncate hover:underline"
+            >
+              {form.source_url}
+            </a>
+          </>
+        ) : null}
 
         <label className="block text-[11px] font-extrabold uppercase text-gray-400 tracking-wider mb-2">
           TEXT (EDITABLE)

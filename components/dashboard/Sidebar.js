@@ -149,11 +149,21 @@ export default function Sidebar({ isOpen, onClose }) {
       
       {/* LOGO AREA */}
       <div className="h-[72px] flex items-center px-4 gap-3 shrink-0">
-        <div className="w-6 h-6 bg-memora-primary rounded-md flex items-center justify-center text-white font-bold text-xs">
-          K
-        </div>
-        <span className="font-semibold text-[15px] text-gray-900 flex-1 truncate">Memora Workspace</span>
-        <button className="text-gray-400 hover:text-gray-600 bg-white border border-gray-200 rounded p-1 shadow-sm">
+        <Link
+          href="/"
+          className="flex items-center gap-3 min-w-0 flex-1 rounded-lg -ml-1 pl-1 py-1 hover:bg-gray-50 transition-colors"
+          title="Back to Memora home"
+        >
+          <div className="w-6 h-6 bg-memora-primary rounded-md flex items-center justify-center text-white font-bold text-xs shrink-0">
+            K
+          </div>
+          <span className="font-semibold text-[15px] text-gray-900 truncate">Memora</span>
+        </Link>
+        <button
+          type="button"
+          className="text-gray-400 hover:text-gray-600 bg-white border border-gray-200 rounded p-1 shadow-sm shrink-0"
+          aria-label="Menu"
+        >
           <Grid size={14} />
         </button>
       </div>

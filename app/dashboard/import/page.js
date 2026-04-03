@@ -10,10 +10,8 @@ import {
 
 const IMPORT_TABS = [
   { id: "links", label: "Links" },
-  { id: "tabs", label: "Browser Tabs" },
-  { id: "rss", label: "RSS Feed" },
+  { id: "manual", label: "Manual Copy-Paste" },
   { id: "csv", label: "CSV Upload" },
-  { id: "crawler", label: "Web Crawler" },
 ];
 
 function domainsFromUrls(urls) {
@@ -85,8 +83,7 @@ export default function BulkImportPage() {
 
   const selectedFolder = folders.find((f) => f.id === folderId);
 
-  const canImport =
-    activeTab === "links" && preview.unique > 0 && !submitting;
+  const canImport = !submitting && input.trim().length > 0 && (activeTab === "links" ? preview.unique > 0 : true);
 
   async function createFolder() {
     const name = newFolderName.trim();
@@ -124,7 +121,8 @@ export default function BulkImportPage() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          text: input,
+          // backend supports `text` OR `paste` and will extract https:// links either way.
+          ...(activeTab === "manual" ? { paste: input } : { text: input }),
           folder_id: folderId || null,
         }),
       });
@@ -176,7 +174,9 @@ export default function BulkImportPage() {
       }
       setInput(urls.join("\n"));
       setActiveTab("links");
-      setStatus(`Loaded ${urls.length} URL${urls.length === 1 ? "" : "s"} from ${file.name}. Review and click Import links.`);
+      setStatus(
+        `Loaded ${urls.length} URL${urls.length === 1 ? "" : "s"} from ${file.name}. Review and click Import.`
+      );
       setStatusTone("ok");
     };
     reader.onerror = () => {
@@ -203,10 +203,10 @@ export default function BulkImportPage() {
             Bulk import
           </h1>
           <p className="mt-2 text-[15px] text-gray-600 font-medium leading-relaxed">
-            Paste HTTPS links to add many sources at once. They are saved in{" "}
-            <span className="text-gray-800 font-semibold">Supabase</span> (type{" "}
-            <code className="text-[13px] bg-gray-100 px-1 rounded">manual</code>
-            ). Duplicates (same URL) are skipped. Up to 500 URLs per import.{" "}
+            Import from URLs (Links tab) or paste any text that contains https:// links (Manual Copy-Paste tab).
+            They are saved in <span className="text-gray-800 font-semibold">Supabase</span> (type{" "}
+            <code className="text-[13px] bg-gray-100 px-1 rounded">manual</code>). Duplicates (same URL) are skipped.
+            Up to 500 links per import.{" "}
             <Link href="/dashboard/sources" className="text-memora-primary font-semibold hover:underline">
               Sources
             </Link>{" "}
@@ -365,9 +365,8 @@ export default function BulkImportPage() {
             <>
               <div className="bg-memora-light border-l-[3px] border-memora-primary rounded-r-xl px-4 py-3.5 mb-5">
                 <p className="text-[14px] font-medium text-gray-700 leading-relaxed">
-                  Paste one URL per line. We&apos;ll validate and import all valid HTTP/HTTPS links into
-                  Supabase{selectedFolder ? ` (${selectedFolder.name})` : ""}. Same URL as an existing source is
-                  skipped.
+                  Paste one URL per line. We&apos;ll validate and import all valid HTTP/HTTPS links into{" "}
+                  Supabase{selectedFolder ? ` (${selectedFolder.name})` : ""}. Same URL as an existing source is skipped.
                 </p>
               </div>
 
@@ -375,9 +374,7 @@ export default function BulkImportPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 className="w-full min-h-[240px] border border-gray-200 rounded-xl p-4 font-mono text-[13px] text-gray-700 bg-gray-50 focus:bg-white focus:outline-none focus:border-memora-primary focus:ring-2 focus:ring-memora-primary/15 resize-y shadow-inner placeholder:text-gray-400"
-                placeholder={
-                  "https://example.com/article1\nhttps://example.com/article2\nhttps://example.com/article3"
-                }
+                placeholder={"https://example.com/article1\nhttps://example.com/article2\nhttps://example.com/article3"}
               />
 
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[12px] font-semibold text-gray-500">
@@ -386,6 +383,89 @@ export default function BulkImportPage() {
                   {input.trim() ? ` · ${preview.total} non-empty line${preview.total === 1 ? "" : "s"}` : ""}
                   {preview.unique === 0 && input.trim() ? " — add http(s):// links" : ""}
                 </span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const text = await navigator.clipboard.readText();
+                      if (!text || !String(text).trim()) {
+                        setStatus("Clipboard is empty.");
+                        setStatusTone("warn");
+                        return;
+                      }
+                      setInput(text);
+                      setStatusTone("ok");
+                      setStatus("Pasted from clipboard.");
+                    } catch (e) {
+                      setStatus(e.message || "Could not read clipboard. Paste manually instead.");
+                      setStatusTone("err");
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-extrabold text-[12px] whitespace-nowrap"
+                  title="Reads clipboard and pastes into the textbox"
+                >
+                  Paste
+                </button>
+                <Link href="/dashboard/sources" className="text-memora-primary font-bold hover:underline">
+                  View sources →
+                </Link>
+              </div>
+            </>
+          ) : activeTab === "manual" ? (
+            <>
+              <div className="bg-memora-light border-l-[3px] border-memora-primary rounded-r-xl px-4 py-3.5 mb-5">
+                <p className="text-[14px] font-medium text-gray-700 leading-relaxed">
+                  Copy/paste any text (for example a chat, article, or notes). We extract valid https:// links and import
+                  them into{" "}
+                  Supabase{selectedFolder ? ` (${selectedFolder.name})` : ""}. If no links are found, we save your pasted text
+                  as a manual note.
+                </p>
+              </div>
+
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                className="w-full min-h-[240px] border border-gray-200 rounded-xl p-4 font-mono text-[13px] text-gray-700 bg-gray-50 focus:bg-white focus:outline-none focus:border-memora-primary focus:ring-2 focus:ring-memora-primary/15 resize-y shadow-inner placeholder:text-gray-400"
+                placeholder={"Paste any text with https:// links…\nExample:\nCheck this: https://example.com/blog/123\nAlso see https://example.com/paper.pdf"}
+              />
+
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[12px] font-semibold text-gray-500">
+                <span>
+                  {preview.unique > 0 ? (
+                    <>
+                      {preview.unique} valid URL{preview.unique === 1 ? "" : "s"} extracted
+                    </>
+                  ) : input.trim() ? (
+                    <>No valid http(s):// links found</>
+                  ) : (
+                    <>Paste something</>
+                  )}
+                  {input.trim() ? ` · ${preview.total} non-empty line${preview.total === 1 ? "" : "s"}` : ""}
+                  {preview.unique === 0 && input.trim() ? " — will save pasted text as a manual note." : ""}
+                </span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const text = await navigator.clipboard.readText();
+                      if (!text || !String(text).trim()) {
+                        setStatus("Clipboard is empty.");
+                        setStatusTone("warn");
+                        return;
+                      }
+                      setInput(text);
+                      setStatusTone("ok");
+                      setStatus("Pasted from clipboard.");
+                    } catch (e) {
+                      setStatus(e.message || "Could not read clipboard. Paste manually instead.");
+                      setStatusTone("err");
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-extrabold text-[12px] whitespace-nowrap"
+                  title="Reads clipboard and pastes into the textbox"
+                >
+                  Paste
+                </button>
                 <Link href="/dashboard/sources" className="text-memora-primary font-bold hover:underline">
                   View sources →
                 </Link>
@@ -398,8 +478,8 @@ export default function BulkImportPage() {
                   Upload a <strong className="text-gray-900">.csv</strong> or text file. Any cell or line that
                   contains an <code className="text-[12px] bg-white/80 px-1 rounded">https://</code> link is
                   extracted, deduplicated, and placed in the editor — then use{" "}
-                  <strong className="text-gray-900">Import links</strong> on the Links tab (we switch you there
-                  automatically).
+                  <strong className="text-gray-900">Import</strong> on the Manual Copy-Paste tab (we switch you
+                  there automatically).
                 </p>
               </div>
               <input
@@ -427,7 +507,7 @@ export default function BulkImportPage() {
                 {IMPORT_TABS.find((t) => t.id === activeTab)?.label}
               </p>
               <p className="text-[14px] font-medium text-gray-500 max-w-sm mx-auto">
-                Not available yet. Use <strong className="text-gray-700">Links</strong> to paste URLs, or{" "}
+                Not available yet. Use <strong className="text-gray-700">Manual Copy-Paste</strong> to paste URLs, or{" "}
                 <strong className="text-gray-700">CSV Upload</strong> to load links from a file.
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-3">
@@ -436,7 +516,7 @@ export default function BulkImportPage() {
                   onClick={() => setActiveTab("links")}
                   className="text-[14px] font-bold text-memora-primary hover:underline"
                 >
-                  Switch to Links
+                  Switch to Manual Copy-Paste
                 </button>
                 <button
                   type="button"
@@ -449,14 +529,14 @@ export default function BulkImportPage() {
             </div>
           )}
 
-          {showDomainRouter && activeTab === "links" ? (
+          {showDomainRouter && (activeTab === "links" || activeTab === "manual") ? (
             <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50/60 p-4">
               <p className="text-[11px] font-extrabold text-blue-800 uppercase tracking-widest mb-3">
                 Domain router
               </p>
               {parsedUrls.length === 0 ? (
                 <p className="text-[13px] font-medium text-gray-600">
-                  Paste URLs in the box above to see counts per domain.
+                  Paste text containing https:// links to see counts per domain.
                 </p>
               ) : (
                 <ul className="space-y-2 max-h-48 overflow-y-auto">
@@ -484,12 +564,12 @@ export default function BulkImportPage() {
               className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-memora-primary text-white text-[14px] font-extrabold hover:bg-memora-dark disabled:opacity-50 disabled:pointer-events-none transition-colors"
             >
               {submitting ? <Loader2 size={18} className="animate-spin" /> : <Link2 size={18} strokeWidth={2.2} />}
-              {submitting ? "Importing…" : "Import links"}
+              {submitting ? "Importing…" : activeTab === "links" ? "Import links" : "Import"}
             </button>
             <button
               type="button"
               onClick={() => {
-                if (activeTab !== "links") setActiveTab("links");
+                if (activeTab === "csv") setActiveTab("links");
                 setShowDomainRouter((v) => !v);
               }}
               className="sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-blue-200 bg-blue-50 text-blue-800 text-[14px] font-extrabold hover:bg-blue-100 transition-colors"

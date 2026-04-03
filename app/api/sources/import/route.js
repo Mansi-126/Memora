@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseUrlsFromBulkText } from "@/lib/bulk-import-urls";
+import { randomUUID } from "crypto";
 
 function jsonError(message, status = 400) {
   return NextResponse.json({ error: message }, { status });
@@ -65,6 +66,7 @@ export async function POST(request) {
   const body = await request.json().catch(() => null);
   if (!body) return jsonError("Invalid JSON body");
 
+  const isManualPaste = body.paste !== undefined && body.paste !== null;
   const text = String(body.text ?? body.paste ?? "");
   const folderIdRaw = body.folder_id;
   const folderId =
@@ -74,6 +76,47 @@ export async function POST(request) {
 
   const urls = parseUrlsFromBulkText(text);
   if (urls.length === 0) {
+    if (isManualPaste) {
+      const trimmed = text.trim();
+      const firstLine =
+        trimmed
+          .split(/\r?\n/)
+          .map((l) => l.trim())
+          .filter(Boolean)[0] || "Manual note";
+      const title = firstLine.slice(0, 500);
+
+      const sourceUrl = `manual://note/${user.id}/${randomUUID()}`;
+
+      const row = {
+        user_id: user.id,
+        title,
+        source_url: sourceUrl,
+        source_type: "manual",
+        platform: "manual",
+        folder_id: folderId,
+        selected_text: trimmed.slice(0, 20000),
+        content: trimmed.slice(0, 50000),
+        metadata: { import: "manual_paste", imported_at: new Date().toISOString() },
+      };
+
+      const { data, error } = await supabase
+        .from("sources")
+        .insert(row)
+        .select("id, source_url")
+        .single();
+
+      if (error) return jsonError(error.message, 500);
+
+      return NextResponse.json({
+        imported: 1,
+        skippedDuplicate: 0,
+        failed: 0,
+        skipped_urls: [],
+        failures: [],
+        data: data ? [data] : [],
+      });
+    }
+
     return jsonError(
       "No valid http(s) URLs found. Paste one URL per line, separate with commas, or upload a CSV that contains links.",
       400

@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { 
   Play, 
   Search, 
@@ -29,12 +31,39 @@ import {
   Users, 
   Leaf, 
   Check,
-  Star
+  Star,
+  Settings
 } from "lucide-react";
-import { useState } from "react";
 
 export default function Home() {
+  const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("All");
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user: u } }) => setUser(u ?? null));
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const navDisplayName = useMemo(() => {
+    return (
+      user?.user_metadata?.full_name ||
+      user?.user_metadata?.name ||
+      user?.user_metadata?.first_name ||
+      user?.email ||
+      "Account"
+    );
+  }, [user]);
+
+  const navAvatarInitial = useMemo(() => {
+    const s = String(navDisplayName).trim();
+    return s ? s[0].toUpperCase() : "?";
+  }, [navDisplayName]);
 
   const tabs = ["All", "Views", "Organize", "Tools"];
   const features = [
@@ -44,11 +73,9 @@ export default function Home() {
     
     { group: "Organize", icon: <FolderSearch size={20} />, name: "Collections", desc: "Group your sources into manageable grid folders" },
     { group: "Organize", icon: <Star size={20} />, name: "Favorites", desc: "Star critical content to keep it one click away" },
-    { group: "Organize", icon: <Mic size={20} />, name: "Podcasts", desc: "Manage audio overviews and content transcriptions" },
 
     { group: "Tools", icon: <RefreshCw size={20} />, name: "Merge Notebooks", desc: "Combine multiple notebooks seamlessly into one" },
     { group: "Tools", icon: <Activity size={20} />, name: "Compare", desc: "Contrast different sources side by side for research" },
-    { group: "Tools", icon: <Zap size={20} />, name: "Automation", desc: "Connect with workflows to auto-import content" },
     { group: "Tools", icon: <LayoutTemplate size={20} />, name: "Prompts", desc: "Store and reuse your best AI prompts instantly" },
     { group: "Tools", icon: <Download size={20} />, name: "Bulk Import", desc: "Mass import links and documents at once" },
   ];
@@ -88,12 +115,34 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Link 
-            href="/login" 
-            className="bg-memora-primary hover:bg-memora-dark text-white px-5 py-2.5 rounded-full font-medium transition-all shadow-[0_0_15px_rgba(34,197,94,0.4)] hover:shadow-[0_0_20px_rgba(34,197,94,0.6)]"
-          >
-            Get Started Free &rarr;
-          </Link>
+          {user ? (
+            <Link
+              href="/dashboard"
+              className="flex items-center justify-center p-0.5 rounded-full border border-gray-200 bg-white hover:border-memora-primary/40 hover:bg-memora-light/50 transition-all"
+              aria-label="Open dashboard"
+            >
+              <div className="w-9 h-9 rounded-full bg-memora-primary text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                {user?.user_metadata?.avatar_url || user?.user_metadata?.picture ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.user_metadata.avatar_url ?? user.user_metadata.picture}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  navAvatarInitial
+                )}
+              </div>
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="bg-memora-primary hover:bg-memora-dark text-white px-5 py-2.5 rounded-full font-medium transition-all shadow-[0_0_15px_rgba(34,197,94,0.4)] hover:shadow-[0_0_20px_rgba(34,197,94,0.6)]"
+            >
+              Get Started Free &rarr;
+            </Link>
+          )}
         </div>
       </nav>
 
@@ -141,33 +190,144 @@ export default function Home() {
 
         {/* Hero Visual Mockup */}
         <div className="relative w-full max-w-4xl mt-16 mx-auto perspective-1000">
-          <div className="relative rounded-xl border border-gray-200 shadow-2xl bg-white overflow-hidden aspect-[16/9] z-10 transform transition-transform hover:scale-[1.01] duration-500">
-            {/* Mockup Topbar */}
-            <div className="h-10 bg-gray-50 border-b border-gray-200 flex items-center px-4 gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-400"></div>
-              <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-              <div className="w-3 h-3 rounded-full bg-green-400"></div>
-              <div className="mx-auto bg-white border border-gray-200 h-6 w-1/2 rounded text-xs flex items-center justify-center text-gray-400">app.memora.com</div>
-            </div>
-            {/* Mockup content */}
-            <div className="flex h-full bg-gray-50">
-              <div className="w-48 border-r border-gray-200 bg-white p-4">
-                <div className="h-4 w-24 bg-memora-border rounded mb-6"></div>
-                <div className="space-y-3">
-                  <div className="h-3 w-full bg-gray-100 rounded"></div>
-                  <div className="h-3 w-5/6 bg-gray-100 rounded"></div>
-                  <div className="h-3 w-full bg-gray-100 rounded"></div>
+          <div className="relative rounded-xl border border-gray-200 shadow-2xl bg-white overflow-hidden aspect-[16/9] z-10 transform transition-transform hover:scale-[1.01] duration-500 flex text-left">
+            {/* Sidebar Mockup */}
+            <div className="w-48 xl:w-56 bg-white border-r border-gray-100 flex flex-col p-4 text-[10px] sm:text-xs tracking-tight">
+              <div className="flex items-center gap-2 mb-8 text-sm font-extrabold text-gray-800">
+                <div className="w-6 h-6 bg-memora-primary rounded text-white flex items-center justify-center font-bold">M</div>
+                Memora
+              </div>
+              
+              <div className="text-gray-400 font-bold mb-2 uppercase tracking-wider text-[9px]">Views</div>
+              <div className="flex items-center justify-between text-gray-500 py-1.5 px-2 rounded-lg mb-1">
+                <div className="flex items-center gap-2"><BookOpen size={14}/> Notebooks</div>
+                <span className="text-gray-400 font-medium">1</span>
+              </div>
+              <div className="flex items-center justify-between text-memora-dark bg-memora-light py-1.5 px-2 rounded-lg mb-1 font-bold">
+                <div className="flex items-center gap-2"><FileText size={14}/> Sources</div>
+                <span>3</span>
+              </div>
+              <div className="flex items-center justify-between text-gray-500 py-1.5 px-2 rounded-lg mb-3">
+                <div className="flex items-center gap-2"><Layers size={14}/> Artifacts</div>
+                <span className="text-gray-400 font-medium">0</span>
+              </div>
+
+              <div className="text-gray-400 font-bold mb-2 uppercase tracking-wider text-[9px]">Organize</div>
+              <div className="flex items-center justify-between text-gray-500 py-1.5 px-2 rounded-lg mb-1">
+                <div className="flex items-center gap-2"><FolderSearch size={14}/> Collections</div>
+                <span className="text-gray-400 font-medium">1</span>
+              </div>
+              <div className="flex items-center justify-between text-gray-500 py-1.5 px-2 rounded-lg mb-3">
+                <div className="flex items-center gap-2"><Star size={14}/> Favorites</div>
+                <span className="text-gray-400 font-medium">2</span>
+              </div>
+
+              <div className="text-gray-400 font-bold mb-2 uppercase tracking-wider text-[9px]">Tools</div>
+              <div className="flex items-center justify-between text-gray-500 py-1.5 px-2 rounded-lg mb-1">
+                <div className="flex items-center gap-2"><RefreshCw size={14}/> Merge Notebooks</div>
+              </div>
+              <div className="flex items-center justify-between text-gray-500 py-1.5 px-2 rounded-lg mb-1">
+                <div className="flex items-center gap-2"><Activity size={14}/> Compare</div>
+              </div>
+              <div className="flex items-center justify-between text-gray-500 py-1.5 px-2 rounded-lg mb-1">
+                <div className="flex items-center gap-2"><LayoutTemplate size={14}/> Prompts</div>
+              </div>
+              <div className="flex items-center justify-between text-gray-500 py-1.5 px-2 rounded-lg mb-3">
+                <div className="flex items-center gap-2"><Download size={14}/> Bulk Import</div>
+              </div>
+
+              <div className="mt-auto flex flex-col gap-2 pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between text-gray-500 py-1.5 px-2 rounded-lg">
+                  <div className="flex items-center gap-2"><Settings size={14}/> Manage Space</div>
+                </div>
+                <div className="flex items-center gap-3 px-2">
+                  <div className="w-7 h-7 rounded-full bg-gray-800 text-white flex items-center justify-center font-bold text-[10px]">M</div>
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <span className="font-bold text-gray-800 leading-tight truncate">User</span>
+                    <span className="text-gray-400 text-[9px] truncate">user@domain.com</span>
+                  </div>
                 </div>
               </div>
-              <div className="flex-1 p-6 flex flex-col gap-4">
-                <div className="flex gap-4">
-                  <div className="h-8 w-2/3 bg-memora-light rounded border border-memora-border"></div>
-                  <div className="h-8 w-1/3 bg-memora-primary/10 rounded border border-memora-primary/20"></div>
+            </div>
+
+            {/* Main Content Mockup */}
+            <div className="flex-1 bg-white flex flex-col items-stretch overflow-hidden">
+              <div className="px-6 py-5 border-b border-gray-100">
+                <div className="text-[10px] text-gray-400 mb-1 flex items-center gap-1 font-medium">
+                  Notebooks <span className="text-gray-300">›</span> <span className="text-gray-800 font-semibold">Sources</span>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="h-32 bg-white rounded-lg border border-gray-200 shadow-sm p-4"></div>
-                  <div className="h-32 bg-white rounded-lg border border-gray-200 shadow-sm p-4"></div>
-                  <div className="h-32 bg-white rounded-lg border border-gray-200 shadow-sm p-4"></div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">All Sources</h2>
+                <div className="flex items-center gap-2">
+                  <div className="border border-gray-200 rounded-full px-3 py-1 flex items-center gap-2 text-xs font-semibold text-gray-700 bg-white shadow-sm">
+                    <span className="text-gray-400 px-1 hover:text-gray-700 cursor-pointer">{'<'}</span> All Sources / All
+                  </div>
+                  <div className="bg-memora-light text-memora-primary font-bold text-[10px] uppercase px-3 py-1.5 rounded-full tracking-wider">3 TOTAL</div>
+                </div>
+              </div>
+
+              <div className="flex-1 p-6 overflow-hidden flex flex-col">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex gap-6 text-xs font-semibold text-gray-400">
+                    <span className="flex items-center gap-1.5 cursor-pointer hover:text-gray-700"><Download size={14}/> Download</span>
+                    <span className="flex items-center gap-1.5 cursor-pointer hover:text-gray-700"><FolderSearch size={14}/> Move to Folder</span>
+                    <span className="flex items-center gap-1.5 cursor-pointer hover:text-gray-700"><MessageSquare size={14}/> Delete</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs">
+                    <div className="border border-gray-200 px-3 py-2 rounded-lg bg-white font-semibold text-gray-700 shadow-sm flex items-center gap-2">All Folders <ChevronDown size={14} className="text-gray-400" /></div>
+                    <div className="border border-gray-200 px-3 py-2 rounded-lg bg-white font-semibold text-gray-800 flex items-center gap-1.5 shadow-sm"><FolderSearch size={14}/> New Folder</div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-gray-100 rounded-xl shadow-sm text-[11px] font-medium w-full flex-1 overflow-hidden flex flex-col">
+                  <div className="grid grid-cols-[auto_auto_1fr_120px_100px_140px] items-center gap-4 px-4 py-3 border-b border-gray-100 text-gray-400 text-[10px] uppercase font-bold tracking-wider">
+                    <div className="w-3.5 h-3.5 rounded-sm border-2 border-gray-200"></div>
+                    <Star size={12} className="text-gray-300" />
+                    <div>Name</div>
+                    <div>Folder</div>
+                    <div>Platform</div>
+                    <div>Last edited time</div>
+                  </div>
+                  
+                  {/* Row 1 */}
+                  <div className="grid grid-cols-[auto_auto_1fr_120px_100px_140px] items-center gap-4 px-4 py-3.5 border-b border-gray-50 text-gray-600 hover:bg-gray-50/50 transition-colors">
+                    <div className="w-3.5 h-3.5 rounded-sm border-2 border-gray-200"></div>
+                    <Star size={14} className="text-gray-200" />
+                    <div className="truncate pr-4">
+                      <div className="font-bold text-gray-900 text-[13px] mb-0.5 truncate">The best products in your inbox</div>
+                      <div className="text-memora-primary truncate text-[11px] hover:underline cursor-pointer">https://www.producthunt.com/newsletters...</div>
+                    </div>
+                    <div className="text-gray-600">mnhgu</div>
+                    <div className="flex"><span className="bg-gray-50 border border-gray-100 px-2 py-0.5 rounded text-[10px] font-semibold text-gray-600">web</span></div>
+                    <div className="text-gray-400">4/3/2026, 12:36 PM</div>
+                  </div>
+                  
+                  {/* Row 2 */}
+                  <div className="grid grid-cols-[auto_auto_1fr_120px_100px_140px] items-center gap-4 px-4 py-3.5 border-b border-gray-50 text-gray-600 hover:bg-gray-50/50 transition-colors">
+                    <div className="w-3.5 h-3.5 rounded-sm border-2 border-gray-200"></div>
+                    <Star size={14} className="text-gray-200" />
+                    <div className="truncate pr-4">
+                      <div className="font-bold text-gray-900 text-[13px] mb-0.5 truncate">Building an efficient Kortex alternative - Claude</div>
+                      <div className="text-memora-primary truncate text-[11px] hover:underline cursor-pointer">https://claude.ai/chat/986e4f0d...</div>
+                    </div>
+                    <div className="text-gray-600">mnhgu</div>
+                    <div className="flex"><span className="bg-orange-50/50 border border-orange-100 px-2 py-0.5 rounded text-[10px] font-semibold text-orange-600">claude</span></div>
+                    <div className="text-gray-400">4/3/2026, 12:36 PM</div>
+                  </div>
+                  
+                  {/* Row 3 */}
+                  <div className="grid grid-cols-[auto_auto_1fr_120px_100px_140px] items-center gap-4 px-4 py-3.5 text-gray-600 hover:bg-gray-50/50 transition-colors">
+                    <div className="w-3.5 h-3.5 rounded-sm border-2 border-gray-200"></div>
+                    <Star size={14} className="fill-yellow-400 text-yellow-400" />
+                    <div className="truncate pr-4">
+                      <div className="font-bold text-gray-900 text-[13px] mb-0.5 truncate flex items-center gap-2">
+                        Kortex-Notebooklm - $55,030 last 30 days
+                      </div>
+                      <div className="text-memora-primary truncate text-[11px] hover:underline cursor-pointer">https://trustmrr.com/startup/kortex...</div>
+                    </div>
+                    <div className="text-gray-600">Unfiled</div>
+                    <div className="flex"><span className="bg-gray-50 border border-gray-100 px-2 py-0.5 rounded text-[10px] font-semibold text-gray-600">web</span></div>
+                    <div className="text-gray-400">4/3/2026, 12:27 PM</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -255,11 +415,17 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex-1 w-full">
-                <div className="bg-white p-6 rounded-2xl shadow-xl border border-memora-border">
+                <div className="bg-white p-6 rounded-2xl shadow-xl border border-memora-border relative">
+                  <div className="absolute -top-3 -right-3 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 shadow-sm border border-green-200 animate-pulse">
+                    <Check size={16} strokeWidth={3} />
+                  </div>
                   <label className="text-sm font-semibold mb-2 block text-gray-700">Import via Link</label>
                   <div className="flex gap-2">
-                    <input type="text" readOnly value="https://chatgpt.com/share/b498f..." className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-500 outline-none" />
-                    <button className="bg-memora-primary text-white px-6 py-3 rounded-lg font-medium shadow w-32">Import</button>
+                    <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-500 font-medium flex items-center min-w-0">
+                       <LinkIcon size={16} className="text-gray-400 mr-2 shrink-0" />
+                       <span className="truncate text-sm">https://chatgpt.com/share/b598f3...</span>
+                    </div>
+                    <button className="bg-memora-primary text-white font-bold px-6 py-3 rounded-xl shadow-[0_4px_12px_rgba(34,197,94,0.3)] hover:shadow-[0_6px_16px_rgba(34,197,94,0.4)] hover:-translate-y-0.5 transition-all w-28 text-sm">Import</button>
                   </div>
                 </div>
               </div>
@@ -274,14 +440,27 @@ export default function Home() {
                   Select any text from any platform. Paste into Memora. Our AI auto-detects whether it&apos;s an AI chat, Reddit thread, LinkedIn post, or article — and structures it perfectly.
                 </p>
               </div>
-              <div className="flex-1 w-full relative">
-                <div className="bg-white p-6 rounded-2xl shadow-xl border border-memora-border h-64 flex flex-col">
-                  <div className="flex-1 bg-gray-50 border border-dashed border-gray-300 rounded-xl flex items-center justify-center p-6 text-gray-400 text-center text-sm">
-                    &quot;I built an AI tool that...&quot; <br/> (Pasted Reddit Thread content)
+              <div className="flex-1 w-full relative group">
+                <div className="bg-white p-2 rounded-2xl shadow-xl border border-memora-border h-64 flex flex-col relative overflow-hidden">
+                  <div className="flex-1 bg-[#FAFAFA] border-2 border-dashed border-gray-200 group-hover:border-memora-primary/50 group-hover:bg-memora-primary/5 transition-colors rounded-xl flex items-center justify-center p-6 text-gray-400 text-center relative z-10">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-14 h-14 bg-white rounded-full shadow border border-gray-100 flex items-center justify-center text-memora-primary group-hover:scale-110 transition-transform">
+                        <Copy size={24} />
+                      </div>
+                      <div className="text-sm font-bold text-gray-500">Cmd+V to Paste text</div>
+                    </div>
+                  </div>
+                  
+                  {/* Hover Paste Reveal Content */}
+                  <div className="absolute inset-x-8 top-1/2 -mt-10 bg-white border border-gray-100 shadow-xl p-4 rounded-xl z-20 translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
+                    <div className="text-[10px] font-extrabold text-orange-400 uppercase tracking-widest mb-1">Reddit Pastsed Content</div>
+                    <div className="text-xs text-gray-700 font-semibold leading-relaxed line-clamp-3">
+                      "I built an AI tool that organizes bookmarks automatically using LLMs. How this works..."
+                    </div>
                   </div>
                 </div>
-                <div className="absolute -bottom-5 right-10 bg-white px-4 py-2 rounded-full shadow-lg border border-memora-border font-bold text-sm flex items-center gap-2 text-memora-dark">
-                  🤖 Detected: Reddit Thread <span className="text-green-500">✅</span>
+                <div className="absolute -bottom-4 right-8 bg-white px-5 py-2.5 rounded-full shadow-lg border border-memora-border font-bold text-sm flex items-center gap-2 text-memora-dark z-30 transform group-hover:scale-105 transition-transform">
+                  🤖 Auto-structured: Reddit Thread <span className="text-green-500 bg-green-100 rounded-full w-5 h-5 flex items-center justify-center"><Check size={12} strokeWidth={3}/></span>
                 </div>
               </div>
             </div>
@@ -296,25 +475,42 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex-1 w-full">
-                <div className="bg-white rounded-2xl shadow-xl border border-memora-border overflow-hidden">
-                  <div className="bg-gray-100 border-b border-gray-200 p-3 flex items-center gap-4">
-                    <div className="flex gap-1.5">
-                      <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                <div className="bg-white rounded-2xl shadow-xl border border-memora-border overflow-hidden flex flex-col h-[280px]">
+                  <div className="bg-[#E5E7EB] border-b border-gray-300 p-3 flex items-center gap-4">
+                    <div className="flex gap-1.5 ml-2">
+                      <div className="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
+                      <div className="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
+                      <div className="w-3 h-3 rounded-full bg-[#27C93F]"></div>
                     </div>
-                    <div className="flex gap-3 text-sm flex-1">
-                      <span className="text-gray-500 bg-gray-200 px-3 py-1 rounded cursor-default">Apps</span>
-                      <span className="bg-memora-light text-memora-dark px-3 py-1 rounded font-bold border border-memora-primary shadow-[0_0_10px_rgba(34,197,94,0.3)] flex items-center gap-2 cursor-pointer">
-                        💚 Save to Memora
+                    <div className="flex gap-3 text-sm flex-1 ml-4 justify-center relative">
+                       <div className="bg-white text-gray-500 px-4 py-1.5 rounded-md shadow-sm border border-gray-200 min-w-[200px] max-w-[300px] flex items-center justify-center gap-2 text-[11px] font-semibold w-full">
+                         <Globe size={12}/> theverge.com/ai-news
+                       </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="bg-memora-primary/10 text-memora-dark px-3 py-1.5 rounded-md font-bold text-[11px] border border-memora-primary shadow-[0_0_10px_rgba(34,197,94,0.3)] flex items-center gap-1.5 cursor-pointer hover:bg-memora-primary hover:text-white transition-all transform hover:-translate-y-0.5">
+                        <Bookmark size={12} fill="currentColor" /> Save to Memora
                       </span>
                     </div>
                   </div>
-                  <div className="p-6 bg-white h-40 pt-10">
-                     <div className="mx-auto w-1/2 flex items-start flex-col gap-2">
-                        <div className="h-6 w-full bg-gray-200 rounded"></div>
-                        <div className="h-4 w-5/6 bg-gray-100 rounded"></div>
-                        <div className="h-4 w-4/6 bg-gray-100 rounded"></div>
+                  <div className="flex-1 bg-white p-10 relative flex flex-col justify-center gap-5 overflow-hidden group">
+                     {/* Article Mockup Content */}
+                     <div className="max-w-[75%] mx-auto space-y-4 w-full">
+                        <div className="h-7 w-full bg-gray-200 rounded-md"></div>
+                        <div className="h-7 w-2/3 bg-gray-200 rounded-md"></div>
+                        <div className="h-4 w-full bg-gray-100 rounded-md mt-6"></div>
+                        <div className="h-4 w-full bg-gray-100 rounded-md"></div>
+                        <div className="h-4 w-5/6 bg-gray-100 rounded-md"></div>
+                     </div>
+
+                     {/* Notification pop-up */}
+                     <div className="absolute right-6 top-6 w-56 bg-white border-2 border-memora-primary/20 rounded-xl shadow-2xl p-4 animate-in slide-in-from-right-4 duration-500">
+                       <div className="flex items-center gap-2 text-memora-primary font-bold text-xs mb-2 uppercase tracking-wide">
+                         <Check size={14} strokeWidth={3}/> Saved Successfully
+                       </div>
+                       <div className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                         Auto-extracted text, title, and metadata to your Memora workspace.
+                       </div>
                      </div>
                   </div>
                 </div>
@@ -513,7 +709,7 @@ export default function Home() {
         </div>
         <div className="max-w-6xl mx-auto border-t border-gray-100 pt-8 flex flex-col md:flex-row items-center justify-between text-gray-400 font-medium">
           <p>© 2026 Memora. All rights reserved.</p>
-          <p className="mt-2 md:mt-0 flex items-center gap-1">Built with 💚 by humans & AI</p>
+          <p className="mt-2 md:mt-0 flex items-center gap-1">Built with 💚 </p>
         </div>
       </footer>
     </div>
