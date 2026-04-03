@@ -16,6 +16,7 @@ import {
   Loader2,
   Link2,
   Download,
+  Trash2,
 } from "lucide-react";
 import { notebookSourcesToPdfBlob } from "@/lib/notebook-sources-pdf";
 
@@ -155,11 +156,31 @@ export default function DashboardHome() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busyFolderId, setBusyFolderId] = useState(null);
+  const [busyAllFolders, setBusyAllFolders] = useState(false);
 
   const bookmarkletHref = useMemo(() => {
     if (typeof window === "undefined") return "#";
     const origin = window.location.origin;
-    const js = `(function(){try{var s='';try{s=window.getSelection?String(window.getSelection()):'';}catch(_e){}if(!s){var a=document.activeElement;var t=(a&&a.tagName)||'';if((t==='TEXTAREA'||t==='INPUT')&&typeof a.selectionStart==='number'&&typeof a.selectionEnd==='number'){s=String(a.value||'').slice(a.selectionStart,a.selectionEnd);}}var p={title:document.title||'Untitled source',source_url:location.href,selected_text:(s||'').slice(0,20000),content:(s||'').slice(0,20000)};var u='${origin}/bookmarklet/save';var w=window.open('about:blank','_blank','width=460,height=560');if(w){try{w.name=JSON.stringify(p);}catch(_e2){}try{w.location.href=u;}catch(_e3){}}else{var q=encodeURIComponent(JSON.stringify(p));window.location.href=u+'?p='+q;}}catch(e){console.error(e);}})();`;
+    const js = [
+      "(function(){try{",
+      "var o='",
+      origin.replace(/\\/g, "\\\\").replace(/'/g, "\\'"),
+      "';",
+      "var s='';try{s=window.getSelection?String(window.getSelection()):'';}catch(_e){}",
+      "if(!s){var a=document.activeElement;var t=(a&&a.tagName)||'';",
+      "if((t==='TEXTAREA'||t==='INPUT')&&typeof a.selectionStart==='number'&&typeof a.selectionEnd==='number'){",
+      "s=String(a.value||'').slice(a.selectionStart,a.selectionEnd);}}",
+      "var p={title:document.title||'Untitled source',source_url:location.href,selected_text:(s||'').slice(0,20000),content:(s||'').slice(0,20000)};",
+      "var u=o+'/bookmarklet/save';",
+      "var pw=340,ph=168;",
+      "var left=Math.max(8,(window.screen.availWidth||1200)-pw-16);",
+      "var topPos=Math.min(80,Math.max(16,window.screen.availTop||0)+16);",
+      "var feat='popup=yes,width='+pw+',height='+ph+',left='+left+',top='+topPos;",
+      "var win=window.open('about:blank','_blank',feat);",
+      "if(win){try{win.name=JSON.stringify(p);}catch(_e2){}try{win.location.href=u;}catch(_e3){}}",
+      "else{var q=encodeURIComponent(JSON.stringify(p));window.location.href=u+'?p='+q;}",
+      "}catch(e){console.error(e);}})();",
+    ].join("");
     return `javascript:${js}`;
   }, []);
 
@@ -187,6 +208,54 @@ export default function DashboardHome() {
   useEffect(() => {
     load();
   }, [load]);
+
+  async function deleteFolder(folder) {
+    const ok = window.confirm(
+      `Delete "${folder.name}"? Sources in this notebook will remain, but become unassigned.`
+    );
+    if (!ok) return;
+
+    setBusyFolderId(folder.id);
+    setError("");
+    try {
+      const res = await fetch(`/api/folders/${folder.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || "Delete failed");
+      await load();
+    } catch (e) {
+      setError(e.message || "Could not delete notebook");
+    } finally {
+      setBusyFolderId(null);
+    }
+  }
+
+  async function deleteAllFolders() {
+    const ok = window.confirm(
+      `Delete all notebooks? Sources will remain but become unassigned. This cannot be undone.`
+    );
+    if (!ok) return;
+
+    setBusyAllFolders(true);
+    setError("");
+    try {
+      const res = await fetch("/api/folders/bulk", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ mode: "all" }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || "Delete all failed");
+      await load();
+    } catch (e) {
+      setError(e.message || "Could not delete all notebooks");
+    } finally {
+      setBusyAllFolders(false);
+    }
+  }
 
   async function copyBookmarklet() {
     await navigator.clipboard.writeText(bookmarkletHref);
@@ -309,6 +378,16 @@ export default function DashboardHome() {
             <Plus size={16} />
             New notebook
           </button>
+          <button
+            type="button"
+            disabled={busyAllFolders || loading || sortedFolders.length === 0}
+            onClick={deleteAllFolders}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white text-[13px] font-bold hover:bg-red-700 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Delete all notebooks (sources remain but become unassigned)"
+          >
+            <Trash2 size={16} />
+            {busyAllFolders ? "Deleting…" : "Delete all"}
+          </button>
           <Link
             href="/dashboard/sources"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-bold text-memora-primary hover:underline"
@@ -371,12 +450,15 @@ export default function DashboardHome() {
                       Last edited
                     </span>
                   </th>
+                  <th scope="col" className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap w-[140px]">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {sortedFolders.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-12 text-center text-gray-500 font-medium">
+                    <td colSpan={6} className="px-4 py-12 text-center text-gray-500 font-medium">
                       No notebooks yet. Create one with <span className="font-bold text-gray-700">New notebook</span> or
                       assign sources to a folder in Sources.
                     </td>
@@ -463,8 +545,20 @@ export default function DashboardHome() {
                             )}
                           </button>
                         </td>
-                        <td className="px-4 py-3.5 text-gray-700 font-medium align-middle whitespace-nowrap">
+                        <td className="px-4 py-3.5 text-gray-700 font-medium align-middle whitespace-nowrap border-r border-gray-100">
                           {formatLastEdited(folder.updated_at)}
+                        </td>
+                        <td className="px-4 py-3.5 align-middle whitespace-nowrap">
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => deleteFolder(folder)}
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-bold text-red-600 bg-red-50 border border-red-100 hover:bg-red-100 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
+                            title="Delete this notebook"
+                          >
+                            <Trash2 size={16} strokeWidth={2.5} />
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     );

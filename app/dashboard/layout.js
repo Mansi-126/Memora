@@ -31,7 +31,7 @@ export default function DashboardLayout({ children }) {
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Top Navbar sits inside the scrolling main area but stays fixed at top relatively or absolute, actually we can just make it sticky or fixed */}
         <div className="shrink-0">
-          <TopNavbar onMenuClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
+          <TopNavbar onMenuClick={() => setIsMobileMenuOpen((v) => !v)} />
         </div>
         
         {/* Actual content */}

@@ -28,47 +28,29 @@ import {
   Eye, 
   Users, 
   Leaf, 
-  Check
+  Check,
+  Star
 } from "lucide-react";
 import { useState } from "react";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("All");
 
-  const tabs = ["All", "Import", "Search", "Organize", "Learn", "Export", "Team"];
+  const tabs = ["All", "Views", "Organize", "Tools"];
   const features = [
-    { group: "Import", icon: <LinkIcon size={20} />, name: "Share URL Import", desc: "Paste ChatGPT/Claude/Perplexity share links directly" },
-    { group: "Import", icon: <Copy size={20} />, name: "Smart Paste", desc: "Paste anything — AI detects format automatically" },
-    { group: "Import", icon: <Bookmark size={20} />, name: "Bookmarklet", desc: "One-click save from any webpage, any browser" },
-    { group: "Import", icon: <FileText size={20} />, name: "PDF Upload", desc: "Drag and drop PDFs, instantly indexed" },
-    { group: "Import", icon: <MonitorPlay size={20} />, name: "YouTube Import", desc: "Paste YouTube URL, get full transcript saved" },
-    { group: "Import", icon: <Globe size={20} />, name: "Web URL Fetch", desc: "Paste any article or blog URL to save full content" },
-    { group: "Import", icon: <Mail size={20} />, name: "Email Inbox", desc: "Forward emails to save@you.memora.app — auto-imported" },
-    { group: "Import", icon: <FileSpreadsheet size={20} />, name: "CSV Bulk Import", desc: "Upload CSV of URLs for bulk import" },
-    { group: "Import", icon: <Mic size={20} />, name: "Audio Transcribe", desc: "Upload audio files, Memora transcribes and indexes" },
+    { group: "Views", icon: <BookOpen size={20} />, name: "Notebooks", desc: "Centralized workspaces for your projects" },
+    { group: "Views", icon: <FileText size={20} />, name: "Sources", desc: "All your saved links, texts, and content in one place" },
+    { group: "Views", icon: <Layers size={20} />, name: "Artifacts", desc: "Generated outputs, notes, and synthesized writings" },
     
-    { group: "Search", icon: <Search size={20} />, name: "Cross-Notebook Search", desc: "Search across every notebook simultaneously" },
-    { group: "Search", icon: <Zap size={20} />, name: "AI Answer Engine", desc: "Get one synthesized answer with source citations" },
-    { group: "Search", icon: <Tag size={20} />, name: "Tag Filtering", desc: "Filter search by tags, type, or date" },
-    { group: "Search", icon: <Clock size={20} />, name: "Instant Results", desc: "< 2 second search across 100s of sources" },
-    
-    { group: "Organize", icon: <FolderSearch size={20} />, name: "Nested Folders", desc: "Organize notebooks in folders and subfolders" },
-    { group: "Organize", icon: <Tag size={20} />, name: "Tags System", desc: "Tag notebooks and sources for easy grouping" },
-    { group: "Organize", icon: <LayoutTemplate size={20} />, name: "Prompt Library", desc: "Save reusable AI prompts for your workflows" },
-    { group: "Organize", icon: <Layers size={20} />, name: "Bulk Management", desc: "Bulk delete, move, merge sources across notebooks" },
-    { group: "Organize", icon: <Eye size={20} />, name: "Source Views", desc: "Save and revisit exact notebook states" },
-    { group: "Organize", icon: <Activity size={20} />, name: "Knowledge Health", desc: "Per-notebook health score and coverage tracking" },
+    { group: "Organize", icon: <FolderSearch size={20} />, name: "Collections", desc: "Group your sources into manageable grid folders" },
+    { group: "Organize", icon: <Star size={20} />, name: "Favorites", desc: "Star critical content to keep it one click away" },
+    { group: "Organize", icon: <Mic size={20} />, name: "Podcasts", desc: "Manage audio overviews and content transcriptions" },
 
-    { group: "Learn", icon: <Layers size={20} />, name: "Flashcards", desc: "Auto-generate flashcards from any source" },
-    { group: "Learn", icon: <RefreshCw size={20} />, name: "Spaced Repetition", desc: "Smart review queue — review cards at the right time" },
-    { group: "Learn", icon: <BookOpen size={20} />, name: "Quizzes", desc: "AI-generated quizzes from your saved content" },
-    
-    { group: "Export", icon: <Download size={20} />, name: "Markdown Export", desc: "Export entire notebook as a zip of Markdown files" },
-    { group: "Export", icon: <RefreshCw size={20} />, name: "Google Docs Sync", desc: "One-click sync all sources to Google Drive" },
-    { group: "Export", icon: <Eye size={20} />, name: "Preview & Edit", desc: "Preview and edit before any export" },
-    
-    { group: "Team", icon: <Users size={20} />, name: "Team Notebooks", desc: "Shared collaborative notebook workspaces" },
-    { group: "Team", icon: <LayoutTemplate size={20} />, name: "Shared Prompts", desc: "Team-wide reusable prompt library" },
+    { group: "Tools", icon: <RefreshCw size={20} />, name: "Merge Notebooks", desc: "Combine multiple notebooks seamlessly into one" },
+    { group: "Tools", icon: <Activity size={20} />, name: "Compare", desc: "Contrast different sources side by side for research" },
+    { group: "Tools", icon: <Zap size={20} />, name: "Automation", desc: "Connect with workflows to auto-import content" },
+    { group: "Tools", icon: <LayoutTemplate size={20} />, name: "Prompts", desc: "Store and reuse your best AI prompts instantly" },
+    { group: "Tools", icon: <Download size={20} />, name: "Bulk Import", desc: "Mass import links and documents at once" },
   ];
 
   const filteredFeatures = activeTab === "All" ? features : features.filter(f => f.group === activeTab);
@@ -102,7 +84,6 @@ export default function Home() {
         <div className="hidden md:flex gap-8 text-memora-muted font-medium">
           <Link href="#features" className="hover:text-memora-primary transition-colors">Features</Link>
           <Link href="#how-it-works" className="hover:text-memora-primary transition-colors">How It Works</Link>
-          <Link href="#pricing" className="hover:text-memora-primary transition-colors">Pricing</Link>
           <Link href="#faq" className="hover:text-memora-primary transition-colors">FAQ</Link>
         </div>
 
@@ -433,70 +414,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* PRICING SECTION */}
-      <section id="pricing" className="py-24 px-6 bg-[#F0FDF4]">
-        <div className="max-w-6xl mx-auto flex flex-col items-center">
-          <div className="bg-memora-primary/10 text-memora-dark font-bold text-xs uppercase tracking-wider px-3 py-1 rounded-full mb-6">Simple Pricing</div>
-          <h2 className="font-heading text-4xl font-bold mb-10 text-center">Start free. Upgrade when you&apos;re ready.</h2>
-
-          <div className="flex items-center gap-4 bg-white p-2 rounded-full border border-memora-border mb-16 shadow-sm">
-            <button className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all ${!yearly ? 'bg-memora-dark text-white' : 'text-memora-muted'}`} onClick={() => setYearly(false)}>Monthly</button>
-            <button className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all ${yearly ? 'bg-memora-dark text-white' : 'text-memora-muted'}`} onClick={() => setYearly(true)}>Yearly <span className="text-memora-primary text-xs ml-1">(Save 38%)</span></button>
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-8 w-full max-w-5xl items-start">
-            {/* Free */}
-            <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm relative">
-              <h3 className="font-bold text-2xl mb-2 text-gray-900">Free</h3>
-              <div className="font-heading text-5xl font-extrabold mb-6">$0 <span className="text-lg font-medium text-gray-400">/ month</span></div>
-              <ul className="space-y-4 mb-8 text-gray-600 font-medium text-sm">
-                <li className="flex items-center gap-3"><Check size={18} className="text-memora-primary"/> 10 notebooks</li>
-                <li className="flex items-center gap-3"><Check size={18} className="text-memora-primary"/> 5 imports/day (URL, paste, bookmark)</li>
-                <li className="flex items-center gap-3"><Check size={18} className="text-memora-primary"/> Basic cross-search</li>
-                <li className="flex items-center gap-3"><Check size={18} className="text-memora-primary"/> 10 AI queries/month</li>
-                <li className="flex items-center gap-3"><Check size={18} className="text-memora-primary"/> 5 flashcard decks</li>
-              </ul>
-              <Link href="/login" className="block w-full text-center py-4 rounded-xl border-2 border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors">Start Free — No Card</Link>
-            </div>
-
-            {/* Pro */}
-            <div className="bg-memora-primary text-white p-8 rounded-3xl border border-memora-dark shadow-[0_20px_40px_-15px_rgba(34,197,94,0.5)] relative transform lg:-translate-y-4">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-memora-dark text-white px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow">Most Popular</div>
-              <h3 className="font-bold text-2xl mb-2 text-white/90">Pro</h3>
-              <div className="font-heading text-5xl font-extrabold mb-6 text-white">${yearly ? '5.5' : '9'} <span className="text-lg font-medium text-white/70">/ month</span></div>
-              <ul className="space-y-4 mb-8 text-white/90 font-medium text-sm">
-                <li className="flex items-center gap-3"><Check size={18} className="text-white"/> Unlimited notebooks & imports</li>
-                <li className="flex items-center gap-3"><Check size={18} className="text-white"/> Unlimited cross-search & AI queries</li>
-                <li className="flex items-center gap-3"><Check size={18} className="text-white"/> Bookmarklet + Email inbox import</li>
-                <li className="flex items-center gap-3"><Check size={18} className="text-white"/> Cloud sync across devices</li>
-                <li className="flex items-center gap-3"><Check size={18} className="text-white"/> Merge, compare & prompts library</li>
-                <li className="flex items-center gap-3"><Check size={18} className="text-white"/> Bulk import & export</li>
-                <li className="flex items-center gap-3"><Check size={18} className="text-white"/> Priority support</li>
-              </ul>
-              <Link href="/login" className="block w-full text-center py-4 rounded-xl bg-white text-memora-primary font-black hover:bg-gray-50 shadow-md transition-colors">Upgrade to Pro &rarr;</Link>
-            </div>
-
-            {/* Team */}
-            <div className="bg-white p-8 rounded-3xl border-2 border-memora-dark/20 shadow-sm relative">
-              <h3 className="font-bold text-2xl mb-2 text-gray-900">Team</h3>
-              <div className="font-heading text-5xl font-extrabold mb-6">$12 <span className="text-lg font-medium text-gray-400">/ seat / month</span></div>
-              <p className="text-xs text-memora-muted mb-6 -mt-4 font-medium">(min 3 seats)</p>
-              <ul className="space-y-4 mb-8 text-gray-600 font-medium text-sm">
-                <li className="flex items-center gap-3"><Check size={18} className="text-memora-dark"/> Everything in Pro</li>
-                <li className="flex items-center gap-3"><Check size={18} className="text-memora-dark"/> Shared team notebooks</li>
-                <li className="flex items-center gap-3"><Check size={18} className="text-memora-dark"/> Shared prompt libraries</li>
-                <li className="flex items-center gap-3"><Check size={18} className="text-memora-dark"/> Admin dashboard</li>
-                <li className="flex items-center gap-3"><Check size={18} className="text-memora-dark"/> Priority support SLA</li>
-              </ul>
-              <Link href="/login" className="block w-full text-center py-4 rounded-xl bg-memora-dark text-white font-bold hover:bg-[#14532D] shadow transition-colors">Contact for Teams</Link>
-            </div>
-          </div>
-          
-          <div className="mt-10 font-medium text-memora-muted text-sm tracking-wide">
-            30-day money-back guarantee · Cancel anytime · No hidden fees
-          </div>
-        </div>
-      </section>
 
       {/* FAQ SECTION */}
       <section id="faq" className="py-24 px-6 bg-white border-t border-memora-border/50">
@@ -563,7 +480,6 @@ export default function Home() {
             <h5 className="font-bold text-memora-dark mb-4 text-base uppercase tracking-wider">Product</h5>
             <ul className="space-y-3 font-medium text-gray-500">
               <li><Link href="#features" className="hover:text-memora-primary">Features</Link></li>
-              <li><Link href="#pricing" className="hover:text-memora-primary">Pricing</Link></li>
               <li><Link href="#how-it-works" className="hover:text-memora-primary">How It Works</Link></li>
               <li><Link href="#" className="hover:text-memora-primary">Changelog</Link></li>
             </ul>

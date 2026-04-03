@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { 
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   Download, FolderInput, Trash2, ChevronDown, FolderPlus, 
   Search, Filter, RotateCw, Square, Star, Folder, Tag
 } from "lucide-react";
 
-export default function SourcesPage() {
+function SourcesPageContent() {
+  const searchParams = useSearchParams();
   const [sources, setSources] = useState([]);
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,14 +58,29 @@ export default function SourcesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFolderId]);
 
+  useEffect(() => {
+    const fromUrl = searchParams.get("q");
+    if (fromUrl == null) return;
+    setQuery(fromUrl);
+  }, [searchParams]);
+
   const filteredSources = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return sources;
-    return sources.filter((item) =>
-      [item.title, item.source_url, item.platform]
+    return sources.filter((item) => {
+      const hay = [
+        item.title,
+        item.source_url,
+        item.platform,
+        item.source_type,
+        item.selected_text,
+        typeof item.content === "string" ? item.content.slice(0, 20000) : item.content,
+        item.metadata && typeof item.metadata === "object" ? JSON.stringify(item.metadata).slice(0, 5000) : item.metadata,
+      ]
         .filter(Boolean)
-        .some((x) => String(x).toLowerCase().includes(q))
-    );
+        .map((x) => String(x).toLowerCase());
+      return hay.some((s) => s.includes(q));
+    });
   }, [query, sources]);
 
   const folderNameById = useMemo(() => {
@@ -424,5 +441,17 @@ export default function SourcesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SourcesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full max-w-full p-12 text-center text-gray-500 text-sm font-medium">Loading sources…</div>
+      }
+    >
+      <SourcesPageContent />
+    </Suspense>
   );
 }
